@@ -20,8 +20,6 @@ A modern, high-performance mobile remote control application for **Loewe Smart T
 * **Live Debug Console:** Built-in, 3-line scrollable monospaced terminal displaying real-time SOAP handshakes, key dispatches, network responses, and error diagnostics.
 * **Zero-Mac iOS Deployment:** Automated GitHub Actions CI workflow compiles an unsigned `.ipa` on `macos-latest` ready for sideloading via **Sideloadly** or **AltStore**.
 
----
-
 ## 📡 Compatibility
 
 Engineered and verified for **Loewe bild 5 (Chassis SL420)** running Loewe OS.
@@ -31,8 +29,6 @@ Also compatible with all Loewe TV chassis supporting the Loewe Remote TV Tablet 
 * **SL2xx:** Chassis SL220 / SL212 (Software version `PV1.10+`).
 * **SL1xx:** Chassis SL150 / SL121 (Basic SOAP controls).
 
----
-
 ## 🛠️ Tech Stack & Architecture
 
 * **UI Framework:** [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/) 1.7.0 (JetBrains)
@@ -41,8 +37,6 @@ Also compatible with all Loewe TV chassis supporting the Loewe Remote TV Tablet 
 * **Async & State:** Kotlinx Coroutines & Flow 1.9.0 + AndroidX Lifecycle ViewModel
 * **Local Persistence:** [Multiplatform-Settings](https://github.com/russhwolf/multiplatform-settings) 1.2.0 (NSUserDefaults on iOS, SharedPreferences on Android)
 * **Native Sockets:** BSD POSIX UDP sockets (`platform.posix.*`) on iOS, `java.net.DatagramSocket` on Android for Wake-on-LAN.
-
----
 
 ## 🚀 Getting Started
 
@@ -66,7 +60,6 @@ Also compatible with all Loewe TV chassis supporting the Loewe Remote TV Tablet 
 3. Once the **Build Kotlin Multiplatform iOS App (.ipa)** workflow completes, download the **`loewe-remote-kmp-ipa`** artifact.
 4. Sideload the `.ipa` onto your iPhone using [Sideloadly](https://sideloadly.io/) or [AltStore](https://altstore.io/).
 
----
 
 ## ⚙️ TV Configuration
 
@@ -79,15 +72,13 @@ Also compatible with all Loewe TV chassis supporting the Loewe Remote TV Tablet 
    * **TV MAC Address:** (e.g. `00:09:82:XX:XX:XX` — found under TV Network settings for Wake-on-LAN).
 4. Tap **Save & Connect**.
 
----
 
 ## 🙏 Acknowledgements & References
 
-* **[hass-loewetv-remoteapi](https://github.com/gadgetbazza/hass-loewetv-remoteapi):** Great appreciation to **gadgetbazza** and contributors for reverse-engineering the Home Assistant Loewe integration, providing the initial foundation for SOAP endpoints and network behavior.
-* **Loewe Technologies GmbH:** Official specification reference from the *"LOEWE TV remote API"* documentation (Revision 1.0.47, Kronach), defining the complete `l2700` and `l2700-hdr` keycode matrices, `RequestAccess` handshake, and network standby protocols.
+* **[hass-loewetv-remoteapi](https://github.com/gadgetbazza/hass-loewetv-remoteapi):** Great appreciation to **gadgetbazza** and contributors for the Home Assistant Loewe integration, providing the initial foundation for SOAP endpoints and network behavior.
+* **Loewe Technologies GmbH:** Official specification reference from the *"LOEWE TV remote API"* documentation (Revision 1.0.47), defining the complete `l2700` and `l2700-hdr` keycode matrices, `RequestAccess` handshake, and network standby protocols.
 * **Google Gemini & DeepMind Antigravity:** Developed and architected with the assistance of **Gemini** and **Google DeepMind Antigravity**, enabling the complete Kotlin Multiplatform implementation, dual-OS native network socket layers, and automated zero-Mac CI/CD deployment pipeline.
 
----
 
 ## 📄 License
 This project is open-source under the [MIT License](LICENSE).
