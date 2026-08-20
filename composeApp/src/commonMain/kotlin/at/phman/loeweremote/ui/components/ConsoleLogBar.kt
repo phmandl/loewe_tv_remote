@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -23,18 +22,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import at.phman.loeweremote.ui.theme.LoeweAccent
-import at.phman.loeweremote.ui.theme.LoeweBorder
-import at.phman.loeweremote.ui.theme.LoeweTextMuted
-import at.phman.loeweremote.ui.theme.LoeweTextSecondary
+import at.phman.loeweremote.ui.theme.AnthropicBorder
+import at.phman.loeweremote.ui.theme.AnthropicMuted
+import at.phman.loeweremote.ui.theme.AnthropicSand
+import at.phman.loeweremote.ui.theme.AnthropicTerracotta
+import at.phman.loeweremote.ui.theme.GreekStatusConnected
+import at.phman.loeweremote.ui.theme.GreekStatusError
 
 @Composable
 fun ConsoleLogBar(
     logs: List<String>,
     onClear: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    height: Dp = 42.dp
 ) {
     val scrollState = rememberScrollState()
 
@@ -48,46 +51,46 @@ fun ConsoleLogBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color(0xFF090A0E))
-            .border(1.dp, Color(0xFF1E2333), RoundedCornerShape(10.dp))
-            .padding(horizontal = 10.dp, vertical = 6.dp)
+            .padding(horizontal = 16.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF0E0D0C))
+            .border(1.dp, AnthropicBorder, RoundedCornerShape(8.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
-            // Scrollable Console Text (Fixed ~3 lines height)
+            // Scrollable Console Text
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .height(58.dp)
+                    .height(height)
                     .verticalScroll(scrollState),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                verticalArrangement = Arrangement.spacedBy(1.dp)
             ) {
                 if (logs.isEmpty()) {
                     Text(
-                        text = "Console ready. No logs.",
-                        color = LoeweTextMuted,
-                        fontSize = 11.sp,
+                        text = "Hermes ready. Listening...",
+                        color = AnthropicMuted,
+                        fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace
                     )
                 } else {
                     logs.forEach { entry ->
                         val color = when {
-                            entry.startsWith("Error", ignoreCase = true) || entry.contains("failed", ignoreCase = true) -> Color(0xFFFF5252)
-                            entry.startsWith("OK", ignoreCase = true) || entry.contains("Connected", ignoreCase = true) -> Color(0xFF4CAF50)
-                            entry.startsWith("Sending", ignoreCase = true) -> LoeweAccent
-                            else -> LoeweTextSecondary
+                            entry.startsWith("Error", ignoreCase = true) || entry.contains("failed", ignoreCase = true) -> GreekStatusError
+                            entry.startsWith("OK", ignoreCase = true) || entry.contains("Connected", ignoreCase = true) -> GreekStatusConnected
+                            entry.startsWith("Sending", ignoreCase = true) -> AnthropicTerracotta
+                            else -> AnthropicSand
                         }
 
                         Text(
                             text = "> $entry",
                             color = color,
-                            fontSize = 11.sp,
-                            lineHeight = 14.sp,
+                            fontSize = 10.sp,
+                            lineHeight = 13.sp,
                             fontFamily = FontFamily.Monospace
                         )
                     }
@@ -98,8 +101,8 @@ fun ConsoleLogBar(
             if (logs.isNotEmpty()) {
                 Text(
                     text = "CLR",
-                    color = LoeweTextMuted,
-                    fontSize = 10.sp,
+                    color = AnthropicMuted,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
                     modifier = Modifier
@@ -110,3 +113,4 @@ fun ConsoleLogBar(
         }
     }
 }
+

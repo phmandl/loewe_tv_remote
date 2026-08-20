@@ -2,30 +2,38 @@ package at.phman.loeweremote
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import at.phman.loeweremote.ui.components.ColorBar
+import at.phman.loeweremote.ui.components.ConsoleLogBar
 import at.phman.loeweremote.ui.components.DPadControl
 import at.phman.loeweremote.ui.components.HeaderBar
 import at.phman.loeweremote.ui.components.NumericPad
 import at.phman.loeweremote.ui.components.RockerControl
 import at.phman.loeweremote.ui.components.TopControls
 import at.phman.loeweremote.ui.dialogs.SettingsDialog
-import at.phman.loeweremote.ui.theme.LoeweBgDark
+import at.phman.loeweremote.ui.theme.AnthropicBg
+import at.phman.loeweremote.ui.theme.AnthropicMuted
 import at.phman.loeweremote.ui.theme.LoeweRemoteTheme
 import at.phman.loeweremote.viewmodel.RemoteViewModel
 
@@ -40,8 +48,8 @@ fun App(
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .background(LoeweBgDark),
-            color = LoeweBgDark
+                .background(AnthropicBg),
+            color = AnthropicBg
         ) {
             Box(
                 modifier = Modifier
@@ -49,65 +57,134 @@ fun App(
                     .statusBarsPadding()
                     .navigationBarsPadding()
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    // 1. Header Bar: Connection Status + WoL + Settings
-                    HeaderBar(
-                        connectionState = uiState.connectionState,
-                        isWolSending = uiState.isWolSending,
-                        isSendingCommand = uiState.isSendingCommand,
-                        onStatusClick = { viewModel.connect() },
-                        onWolClick = { viewModel.sendWakeOnLan() },
-                        onSettingsClick = { viewModel.toggleSettings(true) }
-                    )
+                    val availableHeight = maxHeight
+                    val availableWidth = maxWidth
 
-                    // 1b. Live Debug Terminal (Always visible, 3 lines, scrollable)
-                    at.phman.loeweremote.ui.components.ConsoleLogBar(
-                        logs = uiState.logs,
-                        onClear = { viewModel.clearLogs() }
-                    )
+                    // Dynamically calculate component dimensions to guarantee 100% screen containment with 0 scroll/bounce
+                    val isSmallScreen = availableHeight < 680.dp
+                    val topBtnSize = if (isSmallScreen) 50.dp else 56.dp
+                    val rockerHeight = if (isSmallScreen) 104.dp else 118.dp
+                    val colorBarHeight = if (isSmallScreen) 30.dp else 34.dp
+                    val logBarHeight = if (isSmallScreen) 34.dp else 38.dp
+                    val rockerVerticalSpace = if (isSmallScreen) 10.dp else 14.dp
+                    val topToDpadGap = if (isSmallScreen) 6.dp else 10.dp
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    // Fixed vertical space taken by Header, Log, TopControls, Rockers, ColorBar, Quote, paddings
+                    val numpadHeightNeeded = if (uiState.isNumpadExpanded) (if (isSmallScreen) 125.dp else 140.dp) else 0.dp
+                    val nonDpadHeight = 44.dp /*Header*/ +
+                            3.dp +
+                            logBarHeight +
+                            6.dp +
+                            topBtnSize +
+                            topToDpadGap +
+                            (rockerVerticalSpace * 2) /*Above & below rockers*/ +
+                            rockerHeight +
+                            colorBarHeight +
+                            (if (uiState.isNumpadExpanded) 6.dp else 0.dp) +
+                            numpadHeightNeeded +
+                            26.dp /*Quote*/ +
+                            16.dp /*Min bottom clearance*/
 
-                    // 2. Top Controls: Power, Info, Menu, Mute
-                    TopControls(
-                        onKeyClick = { key -> viewModel.sendKey(key) }
-                    )
+                    val availableForDpad = (availableHeight - nonDpadHeight)
+                    // In DPadControl, total height is approximately dpadDiameter * 1.22f + 8.dp
+                    val maxDpadWidth = (availableWidth * 0.70f).coerceIn(150.dp, 215.dp)
+                    val calculatedDpadDiameter = ((availableForDpad - 8.dp) / 1.22f).coerceIn(110.dp, maxDpadWidth)
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // --- TOP CLUSTER (Tight, cohesive flow) ---
+                        // 1. Header Bar: Connection Status + WoL + Settings (Enlarged)
+                        HeaderBar(
+                            connectionState = uiState.connectionState,
+                            isWolSending = uiState.isWolSending,
+                            isSendingCommand = uiState.isSendingCommand,
+                            onStatusClick = { viewModel.connect() },
+                            onWolClick = { viewModel.sendWakeOnLan() },
+                            onSettingsClick = { viewModel.toggleSettings(true) }
+                        )
 
-                    // 3. Navigation D-Pad & Back / Home
-                    DPadControl(
-                        onKeyClick = { key -> viewModel.sendKey(key) }
-                    )
+                        Spacer(modifier = Modifier.height(3.dp))
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        // 1b. Live Debug Terminal (Hermes console)
+                        ConsoleLogBar(
+                            logs = uiState.logs,
+                            onClear = { viewModel.clearLogs() },
+                            height = logBarHeight
+                        )
 
-                    // 4. Volume & Channel Rockers + EPG / Numpad toggle
-                    RockerControl(
-                        onKeyClick = { key -> viewModel.sendKey(key) },
-                        onToggleNumpad = { viewModel.toggleNumpad() },
-                        isNumpadExpanded = uiState.isNumpadExpanded
-                    )
+                        Spacer(modifier = Modifier.height(6.dp))
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                        // 2. Top Controls: Power, Info, Menu, Mute
+                        TopControls(
+                            onKeyClick = { key -> viewModel.sendKey(key) },
+                            buttonSize = topBtnSize
+                        )
 
-                    // 5. Color Keys Row (Red, Green, Yellow, Blue)
-                    ColorBar(
-                        onKeyClick = { key -> viewModel.sendKey(key) }
-                    )
+                        // 1) Slight gap to the D-Pad
+                        Spacer(modifier = Modifier.height(topToDpadGap))
 
-                    // 6. Collapsible Numeric Keypad
-                    NumericPad(
-                        expanded = uiState.isNumpadExpanded,
-                        onKeyClick = { key -> viewModel.sendKey(key) }
-                    )
+                        // 3. Navigation D-Pad & Back / Home
+                        DPadControl(
+                            onKeyClick = { key -> viewModel.sendKey(key) },
+                            dpadSize = calculatedDpadDiameter
+                        )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        // Equal spacing above the Rockers
+                        Spacer(modifier = Modifier.height(rockerVerticalSpace))
+
+                        // 4. Volume & Channel Rockers + EPG / Numpad
+                        RockerControl(
+                            onKeyClick = { key -> viewModel.sendKey(key) },
+                            onToggleNumpad = { viewModel.toggleNumpad() },
+                            isNumpadExpanded = uiState.isNumpadExpanded,
+                            rockerHeight = rockerHeight
+                        )
+
+                        // Equal spacing below the Rockers
+                        Spacer(modifier = Modifier.height(rockerVerticalSpace))
+
+                        // 5. Color Keys Row
+                        ColorBar(
+                            onKeyClick = { key -> viewModel.sendKey(key) },
+                            barHeight = colorBarHeight
+                        )
+
+                        // 6. Collapsible Numeric Keypad (if expanded)
+                        if (uiState.isNumpadExpanded) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            NumericPad(
+                                expanded = uiState.isNumpadExpanded,
+                                onKeyClick = { key -> viewModel.sendKey(key) },
+                                buttonHeight = if (isSmallScreen) 32.dp else 36.dp
+                            )
+                        }
+
+                        // 2) When the screen is large, introduce gaps ONLY at the bottom to the quote
+                        Spacer(modifier = Modifier.weight(1f, fill = true))
+
+                        // 7. Subtle Quote
+                        Text(
+                            text = "„Lob ist wie die Lautstärke-Taste: Drehst du sie zu weit auf, wird das Programm auch nicht besser.“",
+                            color = AnthropicMuted.copy(alpha = 0.65f),
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Serif,
+                            fontStyle = FontStyle.Italic,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 13.sp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 18.dp, vertical = 2.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
                 }
 
                 // Settings Modal Sheet/Dialog
@@ -122,3 +199,6 @@ fun App(
         }
     }
 }
+
+
+

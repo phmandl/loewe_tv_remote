@@ -16,70 +16,87 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.phman.loeweremote.model.LoeweKey
-import at.phman.loeweremote.ui.theme.LoeweBorder
-import at.phman.loeweremote.ui.theme.LoewePowerRed
-import at.phman.loeweremote.ui.theme.LoewePowerRedBg
-import at.phman.loeweremote.ui.theme.LoeweTextSecondary
+import at.phman.loeweremote.ui.theme.AnthropicBorder
+import at.phman.loeweremote.ui.theme.AnthropicGoldBorder
+import at.phman.loeweremote.ui.theme.AnthropicParchment
+import at.phman.loeweremote.ui.theme.AnthropicSand
+import at.phman.loeweremote.ui.theme.AnthropicSurfaceElevated
+import at.phman.loeweremote.ui.theme.AnthropicTerracotta
+import at.phman.loeweremote.ui.theme.AnthropicTerracottaBg
 
 @Composable
 fun TopControls(
     onKeyClick: (LoeweKey) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    buttonSize: Dp = 56.dp
 ) {
+    val fontSize = (buttonSize.value * 0.22f).coerceIn(11.5f, 14.5f).sp
+    val powerIconSize = (buttonSize * 0.44f).coerceIn(20.dp, 26.dp)
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 4.dp),
+            .padding(horizontal = 16.dp, vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Power Button (Custom Canvas Icon)
+        // Power Button (Anthropic Terracotta Seal)
         RemoteButton(
             onClick = { onKeyClick(LoeweKey.POWER) },
-            backgroundColor = LoewePowerRedBg,
-            borderColor = LoewePowerRed.copy(alpha = 0.6f),
+            backgroundColor = AnthropicTerracottaBg,
+            borderColor = AnthropicTerracotta.copy(alpha = 0.85f),
             shape = CircleShape,
-            minSize = 54.dp,
-            modifier = Modifier.size(54.dp)
+            minSize = buttonSize,
+            modifier = Modifier.size(buttonSize)
         ) {
-            PowerIcon(color = LoewePowerRed, size = 20.dp)
+            PowerIcon(color = AnthropicTerracotta, size = powerIconSize)
         }
 
         // Info Button
         RemoteButton(
             onClick = { onKeyClick(LoeweKey.INFO) },
+            backgroundColor = AnthropicSurfaceElevated,
+            borderColor = AnthropicBorder,
             shape = CircleShape,
-            minSize = 54.dp,
-            modifier = Modifier.size(54.dp)
+            minSize = buttonSize,
+            modifier = Modifier.size(buttonSize)
         ) {
             Text(
                 text = "INFO",
-                color = LoeweTextSecondary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
+                color = AnthropicSand,
+                fontSize = fontSize,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.5.sp,
                 maxLines = 1,
                 softWrap = false,
                 textAlign = TextAlign.Center
             )
         }
 
-        // Menu Button (Ensures "MENU" is never line-wrapped)
+        // Menu Button
         RemoteButton(
             onClick = { onKeyClick(LoeweKey.MENU) },
+            backgroundColor = AnthropicSurfaceElevated,
+            borderColor = AnthropicBorder,
             shape = CircleShape,
-            minSize = 54.dp,
-            modifier = Modifier.size(54.dp)
+            minSize = buttonSize,
+            modifier = Modifier.size(buttonSize)
         ) {
             Text(
                 text = "MENU",
-                color = LoeweTextSecondary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
+                color = AnthropicSand,
+                fontSize = fontSize,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.5.sp,
                 maxLines = 1,
                 softWrap = false,
                 textAlign = TextAlign.Center
@@ -89,15 +106,19 @@ fun TopControls(
         // Mute Button
         RemoteButton(
             onClick = { onKeyClick(LoeweKey.MUTE) },
+            backgroundColor = AnthropicSurfaceElevated,
+            borderColor = AnthropicBorder,
             shape = CircleShape,
-            minSize = 54.dp,
-            modifier = Modifier.size(54.dp)
+            minSize = buttonSize,
+            modifier = Modifier.size(buttonSize)
         ) {
             Text(
                 text = "MUTE",
-                color = LoeweTextSecondary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
+                color = AnthropicSand,
+                fontSize = fontSize,
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.5.sp,
                 maxLines = 1,
                 softWrap = false,
                 textAlign = TextAlign.Center
@@ -108,11 +129,11 @@ fun TopControls(
 
 @Composable
 fun PowerIcon(
-    color: Color = LoewePowerRed,
-    size: androidx.compose.ui.unit.Dp = 20.dp
+    color: Color = AnthropicTerracotta,
+    size: Dp = 18.dp
 ) {
     Canvas(modifier = Modifier.size(size)) {
-        val strokeWidth = 2.2.dp.toPx()
+        val strokeWidth = 2.dp.toPx()
         val diameter = size.toPx()
         val radius = diameter / 2f
         val pad = strokeWidth / 2f
@@ -138,3 +159,4 @@ fun PowerIcon(
         )
     }
 }
+

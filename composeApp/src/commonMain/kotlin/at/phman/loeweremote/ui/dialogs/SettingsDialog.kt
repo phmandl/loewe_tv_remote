@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
@@ -25,23 +28,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.phman.loeweremote.model.RemoteSettingsState
 import at.phman.loeweremote.ui.components.RemoteButton
-import at.phman.loeweremote.ui.theme.LoeweAccent
-import at.phman.loeweremote.ui.theme.LoeweBorder
-import at.phman.loeweremote.ui.theme.LoeweSurfaceDark
-import at.phman.loeweremote.ui.theme.LoeweSurfaceElevated
-import at.phman.loeweremote.ui.theme.LoeweTextMuted
-import at.phman.loeweremote.ui.theme.LoeweTextPrimary
-import at.phman.loeweremote.ui.theme.LoeweTextSecondary
-
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import at.phman.loeweremote.ui.theme.AnthropicBorder
+import at.phman.loeweremote.ui.theme.AnthropicGoldBorder
+import at.phman.loeweremote.ui.theme.AnthropicMuted
+import at.phman.loeweremote.ui.theme.AnthropicParchment
+import at.phman.loeweremote.ui.theme.AnthropicSand
+import at.phman.loeweremote.ui.theme.AnthropicSurfaceDark
+import at.phman.loeweremote.ui.theme.AnthropicSurfaceElevated
+import at.phman.loeweremote.ui.theme.AnthropicTerracotta
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,13 +62,13 @@ fun SettingsDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(LoeweSurfaceDark)
-                .border(1.dp, LoeweBorder, RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(20.dp))
+                .background(AnthropicSurfaceDark)
+                .border(1.2.dp, AnthropicGoldBorder.copy(alpha = 0.6f), RoundedCornerShape(20.dp))
                 .padding(20.dp)
                 .imePadding()
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Header
             Row(
@@ -76,24 +77,26 @@ fun SettingsDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Loewe TV Configuration",
-                    color = LoeweTextPrimary,
+                    text = "Loewe Configuration",
+                    color = AnthropicParchment,
                     fontSize = 18.sp,
+                    fontFamily = FontFamily.Serif,
                     fontWeight = FontWeight.Bold
                 )
             }
 
             Text(
                 text = "Target: Loewe bild 5 (Chassis SL420, Loewe OS)",
-                color = LoeweTextMuted,
-                fontSize = 12.sp
+                color = AnthropicMuted,
+                fontSize = 11.5.sp,
+                fontFamily = FontFamily.Serif
             )
 
             // IP Address Field
             OutlinedTextField(
                 value = ipAddress,
                 onValueChange = { ipAddress = it },
-                label = { Text("TV IP Address") },
+                label = { Text("TV IP Address", fontFamily = FontFamily.Serif) },
                 placeholder = { Text("e.g. 192.168.1.100") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -105,7 +108,7 @@ fun SettingsDialog(
             OutlinedTextField(
                 value = macAddress,
                 onValueChange = { macAddress = it },
-                label = { Text("TV MAC Address (for WoL)") },
+                label = { Text("TV MAC Address (for WoL)", fontFamily = FontFamily.Serif) },
                 placeholder = { Text("e.g. 00:11:22:33:44:55") },
                 singleLine = true,
                 colors = textFieldColors(),
@@ -116,7 +119,7 @@ fun SettingsDialog(
             OutlinedTextField(
                 value = portText,
                 onValueChange = { portText = it },
-                label = { Text("SOAP Port (Default 905)") },
+                label = { Text("SOAP Port (Default 905)", fontFamily = FontFamily.Serif) },
                 placeholder = { Text("905") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -128,7 +131,7 @@ fun SettingsDialog(
             OutlinedTextField(
                 value = deviceName,
                 onValueChange = { deviceName = it },
-                label = { Text("Client Device Name") },
+                label = { Text("Client Device Name", fontFamily = FontFamily.Serif) },
                 placeholder = { Text("Loewe Remote App") },
                 singleLine = true,
                 colors = textFieldColors(),
@@ -145,13 +148,14 @@ fun SettingsDialog(
                 // Cancel
                 RemoteButton(
                     onClick = onDismiss,
-                    shape = RoundedCornerShape(12.dp),
-                    backgroundColor = LoeweSurfaceElevated,
+                    shape = RoundedCornerShape(10.dp),
+                    backgroundColor = AnthropicSurfaceElevated,
+                    borderColor = AnthropicBorder,
                     modifier = Modifier
                         .weight(1f)
-                        .height(46.dp)
+                        .height(44.dp)
                 ) {
-                    Text("Cancel", color = LoeweTextSecondary, fontSize = 14.sp)
+                    Text("Cancel", color = AnthropicSand, fontSize = 13.sp, fontFamily = FontFamily.Serif)
                 }
 
                 // Save
@@ -166,14 +170,14 @@ fun SettingsDialog(
                         )
                         onSave(updated)
                     },
-                    shape = RoundedCornerShape(12.dp),
-                    backgroundColor = LoeweAccent,
-                    borderColor = LoeweAccent,
+                    shape = RoundedCornerShape(10.dp),
+                    backgroundColor = AnthropicTerracotta,
+                    borderColor = AnthropicTerracotta,
                     modifier = Modifier
                         .weight(1f)
-                        .height(46.dp)
+                        .height(44.dp)
                 ) {
-                    Text("Save & Connect", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("Save & Connect", color = AnthropicParchment, fontSize = 13.sp, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -182,11 +186,12 @@ fun SettingsDialog(
 
 @Composable
 private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = LoeweAccent,
-    unfocusedBorderColor = LoeweBorder,
-    focusedLabelColor = LoeweAccent,
-    unfocusedLabelColor = LoeweTextSecondary,
-    focusedTextColor = LoeweTextPrimary,
-    unfocusedTextColor = LoeweTextPrimary,
-    cursorColor = LoeweAccent
+    focusedBorderColor = AnthropicTerracotta,
+    unfocusedBorderColor = AnthropicBorder,
+    focusedLabelColor = AnthropicTerracotta,
+    unfocusedLabelColor = AnthropicSand,
+    focusedTextColor = AnthropicParchment,
+    unfocusedTextColor = AnthropicParchment,
+    cursorColor = AnthropicTerracotta
 )
+

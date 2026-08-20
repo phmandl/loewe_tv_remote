@@ -22,46 +22,49 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import at.phman.loeweremote.ui.theme.LoeweBorder
-import at.phman.loeweremote.ui.theme.LoeweBorderActive
-import at.phman.loeweremote.ui.theme.LoeweSurfaceDark
-import at.phman.loeweremote.ui.theme.LoeweSurfaceElevated
-import at.phman.loeweremote.ui.theme.LoeweTextPrimary
+import at.phman.loeweremote.ui.theme.AnthropicBorder
+import at.phman.loeweremote.ui.theme.AnthropicBorderActive
+import at.phman.loeweremote.ui.theme.AnthropicParchment
+import at.phman.loeweremote.ui.theme.AnthropicSurfaceElevated
 
 @Composable
 fun RemoteButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     label: String? = null,
-    textColor: Color = LoeweTextPrimary,
-    backgroundColor: Color = LoeweSurfaceElevated,
-    borderColor: Color = LoeweBorder,
-    shape: Shape = RoundedCornerShape(16.dp),
-    minSize: Dp = 54.dp,
+    textColor: Color = AnthropicParchment,
+    backgroundColor: Color = AnthropicSurfaceElevated,
+    borderColor: Color = AnthropicBorder,
+    shape: Shape = RoundedCornerShape(14.dp),
+    minSize: Dp = 48.dp,
+    fontSize: TextUnit = 14.sp,
+    fontFamily: FontFamily = FontFamily.Serif,
     enabled: Boolean = true,
     content: (@Composable () -> Unit)? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (isPressed) 0.93f else 1.0f, label = "button_scale")
+    val scale by animateFloatAsState(if (isPressed) 0.94f else 1.0f, label = "button_scale")
 
     val bgGradient = if (isPressed) {
         Brush.verticalGradient(
             colors = listOf(
-                backgroundColor.copy(alpha = 0.7f),
-                backgroundColor.copy(alpha = 0.9f)
+                backgroundColor.copy(alpha = 0.65f),
+                backgroundColor.copy(alpha = 0.85f)
             )
         )
     } else {
         Brush.verticalGradient(
             colors = listOf(
-                backgroundColor,
-                backgroundColor.copy(alpha = 0.85f)
+                backgroundColor.copy(alpha = 0.95f),
+                backgroundColor
             )
         )
     }
@@ -74,7 +77,7 @@ fun RemoteButton(
             .background(bgGradient)
             .border(
                 width = 1.dp,
-                color = if (isPressed) LoeweBorderActive else borderColor,
+                color = if (isPressed) AnthropicBorderActive else borderColor,
                 shape = shape
             )
             .clickable(
@@ -83,7 +86,7 @@ fun RemoteButton(
                 enabled = enabled,
                 onClick = onClick
             )
-            .padding(8.dp),
+            .padding(6.dp),
         contentAlignment = Alignment.Center
     ) {
         if (content != null) {
@@ -92,8 +95,10 @@ fun RemoteButton(
             Text(
                 text = label,
                 color = textColor,
-                fontSize = 15.sp,
+                fontSize = fontSize,
                 fontWeight = FontWeight.SemiBold,
+                fontFamily = fontFamily,
+                letterSpacing = 0.5.sp,
                 textAlign = TextAlign.Center
             )
         }
@@ -105,10 +110,12 @@ fun CircularRemoteButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     label: String? = null,
-    textColor: Color = LoeweTextPrimary,
-    backgroundColor: Color = LoeweSurfaceElevated,
-    borderColor: Color = LoeweBorder,
-    size: Dp = 54.dp,
+    textColor: Color = AnthropicParchment,
+    backgroundColor: Color = AnthropicSurfaceElevated,
+    borderColor: Color = AnthropicBorder,
+    size: Dp = 48.dp,
+    fontSize: TextUnit = 14.sp,
+    fontFamily: FontFamily = FontFamily.Serif,
     enabled: Boolean = true,
     content: (@Composable () -> Unit)? = null
 ) {
@@ -121,6 +128,8 @@ fun CircularRemoteButton(
         borderColor = borderColor,
         shape = CircleShape,
         minSize = size,
+        fontSize = fontSize,
+        fontFamily = fontFamily,
         enabled = enabled,
         content = content
     )
