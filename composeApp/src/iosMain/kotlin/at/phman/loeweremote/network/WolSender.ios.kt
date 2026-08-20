@@ -17,8 +17,6 @@ import platform.posix.SOCK_DGRAM
 import platform.posix.SOL_SOCKET
 import platform.posix.SO_BROADCAST
 import platform.posix.close
-import platform.posix.htons
-import platform.posix.inet_addr
 import platform.posix.sendto
 import platform.posix.setsockopt
 import platform.posix.sockaddr_in
@@ -48,9 +46,11 @@ actual object PlatformWolSender {
                 }
 
                 val targetAddr = alloc<sockaddr_in>()
+                targetAddr.sin_len = sizeOf<sockaddr_in>().convert()
                 targetAddr.sin_family = AF_INET.convert()
-                targetAddr.sin_port = htons(port.toUShort()).convert()
-                targetAddr.sin_addr.s_addr = inet_addr("255.255.255.255")
+                targetAddr.sin_port = toBigEndian16(port).convert()
+                // 255.255.255.255 broadcast address (INADDR_BROADCAST)
+                targetAddr.sin_addr.s_addr = 0xFFFFFFFFu
 
                 bytes.usePinned { pinned ->
                     val sent = sendto(
@@ -69,5 +69,15 @@ actual object PlatformWolSender {
         } finally {
             close(sock)
         }
+    }
+
+    /**
+     * Converts a 16-bit port number to Network Byte Order (Big-Endian).
+     * Replaces C macro htons().
+     */
+    private fun toBigEndian16(port: Int): UShort {
+        val b1 = (port and 0xFF) shl 8
+        val b2 = (port ushr 8) and 0xFF
+        return (b1 or b2).toUShort()
     }
 }
