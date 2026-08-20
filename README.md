@@ -1,6 +1,6 @@
-# Loewe TV Remote — Kotlin Multiplatform (Compose)
+# Loewe TV Remote
 
-A modern, high-performance mobile remote control application for **Loewe Smart TVs** (specifically **Loewe bild 5 OLED**, Chassis SL420, and all Loewe OS platforms). Built with **Kotlin Multiplatform (KMP)** and **Compose Multiplatform**, sharing 100% of the UI, state management, and network logic across **iOS** and **Android**.
+A mobile remote control application for **Loewe Smart TVs** (specifically **Loewe bild 5 OLED**, Chassis SL420, and all Loewe OS platforms). Built with **Kotlin Multiplatform (KMP)** and **Compose Multiplatform**, sharing 100% of the UI, state management, and network logic across **iOS** and **Android**.
 
 ---
 
@@ -18,7 +18,6 @@ A modern, high-performance mobile remote control application for **Loewe Smart T
   * Automatic fallback: If the TV is in deep standby (SOAP server offline), tapping the Power button automatically broadcasts a 102-byte UDP Magic Packet (`Port 9`) to wake the TV, waits for the network stack, and completes the handshake.
   * Dedicated manual `⚡ WoL` broadcast button in the header.
 * **Live Debug Console:** Built-in, 3-line scrollable monospaced terminal displaying real-time SOAP handshakes, key dispatches, network responses, and error diagnostics.
-* **Zero-Mac iOS Deployment:** Automated GitHub Actions CI workflow compiles an unsigned `.ipa` on `macos-latest` ready for sideloading via **Sideloadly** or **AltStore**.
 
 ## 📡 Compatibility
 
@@ -28,15 +27,6 @@ Also compatible with all Loewe TV chassis supporting the Loewe Remote TV Tablet 
 * **SL3xx / SL4xx / SL5xx (Loewe OS):** Loewe bild 1, bild 2, bild 3, bild 4, bild 5, bild 7, bild 9, Reference, Individual, Connect, and Art.
 * **SL2xx:** Chassis SL220 / SL212 (Software version `PV1.10+`).
 * **SL1xx:** Chassis SL150 / SL121 (Basic SOAP controls).
-
-## 🛠️ Tech Stack & Architecture
-
-* **UI Framework:** [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/) 1.7.0 (JetBrains)
-* **Language & Runtime:** Kotlin 2.0.21 on Java 21 (JBR 21 LTS)
-* **Networking & HTTP:** [Ktor Client](https://ktor.io/) 3.0.1 (OkHttp on Android, Darwin on iOS)
-* **Async & State:** Kotlinx Coroutines & Flow 1.9.0 + AndroidX Lifecycle ViewModel
-* **Local Persistence:** [Multiplatform-Settings](https://github.com/russhwolf/multiplatform-settings) 1.2.0 (NSUserDefaults on iOS, SharedPreferences on Android)
-* **Native Sockets:** BSD POSIX UDP sockets (`platform.posix.*`) on iOS, `java.net.DatagramSocket` on Android for Wake-on-LAN.
 
 ## 🚀 Getting Started
 
