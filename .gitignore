@@ -22,3 +22,5 @@ DerivedData/
 iosApp/build/
 iosApp/DerivedData/
 *.ipa
+logs_*/
+*.log

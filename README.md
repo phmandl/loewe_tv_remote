@@ -6,8 +6,7 @@ A mobile remote control application for **Loewe Smart TVs** (specifically **Loew
 
 ## 📺 Overview & Key Features
 
-* **Dark OLED Remote UI:** Custom tactile dark-mode interface designed for high-contrast OLED displays with haptic/visual feedback.
-* **Complete Loewe Control Set:**
+* **Loewe Control Set:**
   * Top Quick Controls: Power, Info, Menu, and Mute.
   * 5-Way Directional Navigation Pad (Up, Down, Left, Right, OK) + Back and Home.
   * Volume & Program Rockers with direct EPG (Electronic Program Guide) trigger.
