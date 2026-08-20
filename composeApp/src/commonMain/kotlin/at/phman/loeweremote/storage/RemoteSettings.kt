@@ -23,26 +23,38 @@ class RemoteSettings(
     }
 
     fun getSettings(): RemoteSettingsState {
-        val ip = settings.getString(KEY_IP_ADDRESS, DEFAULT_IP)
-        val mac = settings.getString(KEY_MAC_ADDRESS, DEFAULT_MAC)
-        val port = settings.getInt(KEY_PORT, DEFAULT_PORT)
-        val deviceId = settings.getString(KEY_DEVICE_ID, DEFAULT_DEVICE_ID)
-        val deviceName = settings.getString(KEY_DEVICE_NAME, DEFAULT_DEVICE_NAME)
+        return runCatching {
+            val ip = settings.getString(KEY_IP_ADDRESS, DEFAULT_IP)
+            val mac = settings.getString(KEY_MAC_ADDRESS, DEFAULT_MAC)
+            val port = settings.getInt(KEY_PORT, DEFAULT_PORT)
+            val deviceId = settings.getString(KEY_DEVICE_ID, DEFAULT_DEVICE_ID)
+            val deviceName = settings.getString(KEY_DEVICE_NAME, DEFAULT_DEVICE_NAME)
 
-        return RemoteSettingsState(
-            ipAddress = ip,
-            macAddress = mac,
-            port = port,
-            deviceId = deviceId,
-            deviceName = deviceName
+            RemoteSettingsState(
+                ipAddress = ip,
+                macAddress = mac,
+                port = port,
+                deviceId = deviceId,
+                deviceName = deviceName
+            )
+        }.getOrDefault(
+            RemoteSettingsState(
+                ipAddress = DEFAULT_IP,
+                macAddress = DEFAULT_MAC,
+                port = DEFAULT_PORT,
+                deviceId = DEFAULT_DEVICE_ID,
+                deviceName = DEFAULT_DEVICE_NAME
+            )
         )
     }
 
     fun saveSettings(state: RemoteSettingsState) {
-        settings[KEY_IP_ADDRESS] = state.ipAddress.trim()
-        settings[KEY_MAC_ADDRESS] = state.macAddress.trim()
-        settings[KEY_PORT] = state.port
-        settings[KEY_DEVICE_ID] = state.deviceId.trim()
-        settings[KEY_DEVICE_NAME] = state.deviceName.trim()
+        runCatching {
+            settings[KEY_IP_ADDRESS] = state.ipAddress.trim()
+            settings[KEY_MAC_ADDRESS] = state.macAddress.trim()
+            settings[KEY_PORT] = state.port
+            settings[KEY_DEVICE_ID] = state.deviceId.trim()
+            settings[KEY_DEVICE_NAME] = state.deviceName.trim()
+        }
     }
 }

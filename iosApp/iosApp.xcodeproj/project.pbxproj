@@ -9,12 +9,14 @@
 /* Begin PBXBuildFile section */
 		A10000012A00000100000001 /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000012A00000100000001 /* iOSApp.swift */; };
 		A10000022A00000100000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000022A00000100000001 /* ContentView.swift */; };
+		A10000032A00000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000042A00000100000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		B10000012A00000100000001 /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		B10000022A00000100000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B10000032A00000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10000042A00000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C10000012A00000100000001 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -43,6 +45,7 @@
 				B10000012A00000100000001 /* iOSApp.swift */,
 				B10000022A00000100000001 /* ContentView.swift */,
 				B10000032A00000100000001 /* Info.plist */,
+				B10000042A00000100000001 /* Assets.xcassets */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -72,7 +75,7 @@
 			dependencies = (
 			);
 			name = iosApp;
-			productName = iosApp;
+			productName = "Loewe Remote";
 			productReference = C10000012A00000100000001 /* iosApp.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -114,6 +117,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000032A00000100000001 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -283,6 +287,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Loewe Remote";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -294,7 +299,7 @@
 					ComposeApp,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = at.phman.loeweremote.iosApp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Loewe Remote";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -314,6 +319,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iosApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Loewe Remote";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -325,7 +331,7 @@
 					ComposeApp,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = at.phman.loeweremote.iosApp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Loewe Remote";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

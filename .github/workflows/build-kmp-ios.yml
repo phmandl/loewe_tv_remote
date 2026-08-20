@@ -44,7 +44,7 @@ jobs:
       - name: Package Payload to IPA
         run: |
           mkdir -p build/Payload
-          cp -r iosApp/derivedData/Build/Products/Release-iphoneos/iosApp.app build/Payload/
+          cp -r iosApp/derivedData/Build/Products/Release-iphoneos/*.app build/Payload/
           cd build
           zip -r loewe-remote-kmp.ipa Payload
 
