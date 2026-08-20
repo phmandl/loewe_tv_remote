@@ -45,37 +45,39 @@ class LoeweSoapClient(
      * Reference: hass-loewetv-remoteapi (custom_components/loewe/soap.py)
      */
     suspend fun requestAccess(settings: RemoteSettingsState): Result<LoeweSession> = mutex.withLock {
-        runCatching {
-            val url = settings.endpointUrl
-            val payload = buildRequestAccessPayload(
-                deviceName = settings.deviceName,
-                deviceUuid = settings.macAddress.replace(":", "").replace("-", "").ifBlank { "001122334455" }
-            )
+        performRequestAccess(settings)
+    }
 
-            val response: HttpResponse = httpClient.post(url) {
-                contentType(ContentType.parse("text/xml; charset=utf-8"))
-                headers {
-                    append("Accept", "*/*")
-                    append("SOAPAction", "RequestAccess")
-                    append(HttpHeaders.UserAgent, "LoeweRemote-KMP/1.0")
-                }
-                setBody(payload)
+    private suspend fun performRequestAccess(settings: RemoteSettingsState): Result<LoeweSession> = runCatching {
+        val url = settings.endpointUrl
+        val payload = buildRequestAccessPayload(
+            deviceName = settings.deviceName,
+            deviceUuid = settings.macAddress.replace(":", "").replace("-", "").ifBlank { "001122334455" }
+        )
+
+        val response: HttpResponse = httpClient.post(url) {
+            contentType(ContentType.parse("text/xml; charset=utf-8"))
+            headers {
+                append("Accept", "*/*")
+                append("SOAPAction", "RequestAccess")
+                append(HttpHeaders.UserAgent, "LoeweRemote-KMP/1.0")
             }
-
-            val body = response.bodyAsText()
-            if (!response.status.isSuccess()) {
-                throw Exception("HTTP ${response.status.value}: ${response.status.description}\n$body")
-            }
-
-            val clientId = extractTagValue(body, "ClientId")
-                ?: throw Exception("No <ClientId> found in TV response:\n$body")
-
-            val fcid = extractTagValue(body, "fcid") ?: "1"
-
-            val session = LoeweSession(clientId = clientId, fcid = fcid)
-            activeSession = session
-            session
+            setBody(payload)
         }
+
+        val body = response.bodyAsText()
+        if (!response.status.isSuccess()) {
+            throw Exception("HTTP ${response.status.value}: ${response.status.description}\n$body")
+        }
+
+        val clientId = extractTagValue(body, "ClientId")
+            ?: throw Exception("No <ClientId> found in TV response:\n$body")
+
+        val fcid = extractTagValue(body, "fcid") ?: "1"
+
+        val session = LoeweSession(clientId = clientId, fcid = fcid)
+        activeSession = session
+        session
     }
 
     /**
@@ -98,7 +100,7 @@ class LoeweSoapClient(
         val session: LoeweSession = mutex.withLock {
             var current = activeSession
             if (current == null) {
-                val authResult = requestAccess(settings)
+                val authResult = performRequestAccess(settings)
                 if (authResult.isFailure) {
                     return Result.failure(authResult.exceptionOrNull() ?: Exception("Authentication failed"))
                 }

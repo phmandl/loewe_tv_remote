@@ -17,7 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.remember
+import androidx.lifecycle.viewmodel.compose.viewModel
 import at.phman.loeweremote.ui.components.ColorBar
 import at.phman.loeweremote.ui.components.DPadControl
 import at.phman.loeweremote.ui.components.HeaderBar
@@ -31,7 +31,7 @@ import at.phman.loeweremote.viewmodel.RemoteViewModel
 
 @Composable
 fun App(
-    viewModel: RemoteViewModel = remember { RemoteViewModel() }
+    viewModel: RemoteViewModel = viewModel { RemoteViewModel() }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val settingsState by viewModel.settingsState.collectAsState()

@@ -96,7 +96,7 @@ fun SettingsDialog(
                 label = { Text("TV IP Address") },
                 placeholder = { Text("e.g. 192.168.1.100") },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 colors = textFieldColors(),
                 modifier = Modifier.fillMaxWidth()
             )
