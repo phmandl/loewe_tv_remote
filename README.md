@@ -1,93 +1,93 @@
-# Loewe Remote (Compose Multiplatform)
+# Loewe TV Remote — Kotlin Multiplatform (Compose)
 
-A modern **Kotlin Multiplatform (Compose Multiplatform)** Remote Control application designed for **Loewe bild 5 OLED TVs (Chassis SL420, Loewe OS)**.
-
-100% shared Kotlin code for UI and business logic targeting **iOS (iPhone/iPad)** and **Android**.
+A modern, high-performance mobile remote control application for **Loewe Smart TVs** (specifically **Loewe bild 5 OLED**, Chassis SL420, and all Loewe OS platforms). Built with **Kotlin Multiplatform (KMP)** and **Compose Multiplatform**, sharing 100% of the UI, state management, and network logic across **iOS** and **Android**.
 
 ---
 
-## Features
+## 📺 Overview & Key Features
 
-- **SOAP-over-HTTP Protocol Engine:**
-  - Automated `RequestAccess` handshake and session management (`<ClientId>`).
-  - `InjectRCKey` command ingestion with auto-reconnect / re-handshake fallback if TV is power-cycled.
-  - Complete Loewe KeyCode mapping (Navigation, Power, Volume, Program, Color Keys, Numpad, Media).
-- **Wake-on-LAN (WoL):**
-  - Sends 102-byte UDP Magic Packet (`255.255.255.255:9`) to wake the TV from Standby.
-  - Native POSIX BSD sockets on iOS via Kotlin/Native (`platform.posix.*`) and DatagramSockets on Android.
-- **Dark OLED Aesthetic:**
-  - Designed with luxury graphite/matte black finishes, glowing accents, ergonomic D-Pad, and vertical rocker switches.
-  - Collapsible numeric keypad for clean viewing on smaller iPhone screens.
-- **Local Persistence:**
-  - TV IP address, MAC address, port, and client ID persisted using Multiplatform Settings.
-- **Automated CI/CD:**
-  - GitHub Actions workflow that compiles the unsigned `.ipa` on `macos-latest` for sideloading with Sideloadly / AltStore.
-
----
-
-## Project Structure
-
-```
-├── .github/workflows/
-│   └── build-kmp-ios.yml         # CI/CD: Automated unsigned .ipa build
-├── composeApp/                   # Shared Compose Multiplatform module
-│   ├── src/
-│   │   ├── commonMain/           # 100% Shared UI, ViewModel, Ktor SOAP & Models
-│   │   ├── androidMain/          # Android Activity & DatagramSocket WoL
-│   │   └── iosMain/              # iOS MainViewController & POSIX WoL Sockets
-├── iosApp/                       # Native iOS Xcode wrapper project (SwiftUI)
-└── gradle/                       # Gradle wrapper & Version Catalog (libs.versions.toml)
-```
+* **Dark OLED Remote UI:** Custom tactile dark-mode interface designed for high-contrast OLED displays with haptic/visual feedback.
+* **Complete Loewe Control Set:**
+  * Top Quick Controls: Power, Info, Menu, and Mute.
+  * 5-Way Directional Navigation Pad (Up, Down, Left, Right, OK) + Back and Home.
+  * Volume & Program Rockers with direct EPG (Electronic Program Guide) trigger.
+  * Interactive Red, Green, Yellow, and Blue color function keys.
+  * Collapsible 0–9 numeric keypad with direct Radio mode switcher.
+* **Dual RC Alphabet Support:** Full support for both standard remote operations (`alphabet="l2700"`) and dedicated DVR/HDR playback controls (`alphabet="l2700-hdr"`: Play, Pause, Stop, Fast-Forward, Rewind, Record).
+* **Smart Power & Wake-on-LAN (WoL):**
+  * Automatic fallback: If the TV is in deep standby (SOAP server offline), tapping the Power button automatically broadcasts a 102-byte UDP Magic Packet (`Port 9`) to wake the TV, waits for the network stack, and completes the handshake.
+  * Dedicated manual `⚡ WoL` broadcast button in the header.
+* **Live Debug Console:** Built-in, 3-line scrollable monospaced terminal displaying real-time SOAP handshakes, key dispatches, network responses, and error diagnostics.
+* **Zero-Mac iOS Deployment:** Automated GitHub Actions CI workflow compiles an unsigned `.ipa` on `macos-latest` ready for sideloading via **Sideloadly** or **AltStore**.
 
 ---
 
-## Loewe TV Communication Parameters
+## 📡 Compatibility
 
-- **Default Port:** `905` (HTTP/TCP)
-- **Path:** `/loewe_tablet_0001`
-- **SOAP Header:** `Content-Type: application/soap+xml; charset=utf-8`
+Engineered and verified for **Loewe bild 5 (Chassis SL420)** running Loewe OS.
 
-### Key Mapping Reference (Exact `hass-loewetv-remoteapi` spec)
-
-| Key / Function | KeyCode (Int) | Description |
-| --- | --- | --- |
-| POWER | 12 | Standby / Power Toggle (`ON_OFF`) |
-| POWER ON / OFF | 22 / 25 | Discrete Power On / Off |
-| MUTE | 13 | Mute Toggle |
-| VOLUME UP / DOWN | 21 / 20 | Volume Up / Down |
-| PROGRAM UP / DOWN | 24 / 23 | Program / Channel Up / Down |
-| UP / DOWN / LEFT / RIGHT | 32 / 33 / 17 / 16 | Directional D-Pad |
-| OK / SELECT | 38 | Confirm / Center OK |
-| MENU | 11 | TV Settings Menu |
-| HOME / MEDIA | 49 | Home / Media Menu |
-| BACK / END | 65 / 63 | Back / Exit |
-| INFO | 79 | Info Banner |
-| EPG | 15 | Electronic Program Guide |
-| TELETEXT | 60 | Teletext (`ttx`) |
-| COLOR KEYS (Red / Green / Yellow / Blue) | 27 / 26 / 43 / 40 | Interactive HbbTV Keys |
-| NUMERIC 0 – 9 | 0 – 9 | Direct Channel & Digit Input |
-| RADIO / PIP / ASPECT | 53 / 10 / 90 | Direct Function Access |
+Also compatible with all Loewe TV chassis supporting the Loewe Remote TV Tablet SOAP API:
+* **SL3xx / SL4xx / SL5xx (Loewe OS):** Loewe bild 1, bild 2, bild 3, bild 4, bild 5, bild 7, bild 9, Reference, Individual, Connect, and Art.
+* **SL2xx:** Chassis SL220 / SL212 (Software version `PV1.10+`).
+* **SL1xx:** Chassis SL150 / SL121 (Basic SOAP controls).
 
 ---
 
-## Getting Started
+## 🛠️ Tech Stack & Architecture
 
-### 1. Android Studio Setup
-1. Open Android Studio.
-2. Select **Open** and choose the `loewe_tv_remote` root folder.
-3. Gradle will synchronize automatically.
-4. Select `composeApp` run configuration to deploy to an Android device or emulator.
+* **UI Framework:** [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/) 1.7.0 (JetBrains)
+* **Language & Runtime:** Kotlin 2.0.21 on Java 21 (JBR 21 LTS)
+* **Networking & HTTP:** [Ktor Client](https://ktor.io/) 3.0.1 (OkHttp on Android, Darwin on iOS)
+* **Async & State:** Kotlinx Coroutines & Flow 1.9.0 + AndroidX Lifecycle ViewModel
+* **Local Persistence:** [Multiplatform-Settings](https://github.com/russhwolf/multiplatform-settings) 1.2.0 (NSUserDefaults on iOS, SharedPreferences on Android)
+* **Native Sockets:** BSD POSIX UDP sockets (`platform.posix.*`) on iOS, `java.net.DatagramSocket` on Android for Wake-on-LAN.
 
-### 2. Building iOS App (.ipa) via GitHub Actions
-1. Push this repository to GitHub (`main` branch) or run via **Actions -> Build KMP iOS App -> Run workflow**.
-2. Download the `loewe-remote-kmp-ipa` artifact from the workflow run.
-3. Sideload `loewe-remote-kmp.ipa` to your iPhone using **Sideloadly** or **AltStore**.
+---
 
-### 3. TV Configuration & First Run
-1. Ensure your iPhone / Android phone is on the **same local Wi-Fi network** as the Loewe bild 5 TV.
-2. Ensure **Mobile App Access / Fast Boot / WOL** is enabled in the TV's Network settings:
-   - TV Menu -> Settings -> Network -> Network Settings -> Allow Mobile Access / Quick Start Mode.
-3. Launch the app, tap **⚙ Settings**, and enter:
-   - **TV IP Address** (e.g. `192.168.1.50`)
-   - **TV MAC Address** (e.g. `00:11:22:33:44:55`) for Wake-on-LAN.
+## 🚀 Getting Started
+
+### 1. Requirements
+* [Android Studio](https://developer.android.com/studio) (Ladybug / Meerkat or later) with **Kotlin Multiplatform** plugin.
+* JDK: **JBR 21** or **Adoptium OpenJDK 21** configured as the Gradle JDK.
+
+### 2. Run on Android
+1. Open the project in Android Studio.
+2. Select the **`composeApp`** run configuration in the top toolbar.
+3. Connect your Android phone via USB (with USB Debugging enabled) or Wi-Fi.
+4. Click **Run** (<kbd>Shift</kbd> + <kbd>F10</kbd>).
+
+### 3. Build for iOS (GitHub Actions)
+1. Push this repository to your GitHub account:
+   ```bash
+   git remote add origin https://github.com/<your-username>/loewe_tv_remote.git
+   git push -u origin main
+   ```
+2. Navigate to the **Actions** tab in your GitHub repository.
+3. Once the **Build Kotlin Multiplatform iOS App (.ipa)** workflow completes, download the **`loewe-remote-kmp-ipa`** artifact.
+4. Sideload the `.ipa` onto your iPhone using [Sideloadly](https://sideloadly.io/) or [AltStore](https://altstore.io/).
+
+---
+
+## ⚙️ TV Configuration
+
+1. In your Loewe TV menu, ensure mobile access and network standby are enabled:
+   * **Settings** &rarr; **Network** &rarr; **Network configuration** &rarr; **Mobile access** / **Quick Start Mode** &rarr; **On**.
+2. Open the Loewe Remote app on your phone.
+3. Tap **⚙ Settings** in the top right:
+   * **TV IP Address:** (e.g. `192.168.1.50`)
+   * **TV Port:** `905` (Default)
+   * **TV MAC Address:** (e.g. `00:09:82:XX:XX:XX` — found under TV Network settings for Wake-on-LAN).
 4. Tap **Save & Connect**.
+
+---
+
+## 🙏 Acknowledgements & References
+
+* **[hass-loewetv-remoteapi](https://github.com/gadgetbazza/hass-loewetv-remoteapi):** Great appreciation to **gadgetbazza** and contributors for reverse-engineering the Home Assistant Loewe integration, providing the initial foundation for SOAP endpoints and network behavior.
+* **Loewe Technologies GmbH:** Official specification reference from the *"LOEWE TV remote API"* documentation (Revision 1.0.47, Kronach), defining the complete `l2700` and `l2700-hdr` keycode matrices, `RequestAccess` handshake, and network standby protocols.
+* **Google Gemini & DeepMind Antigravity:** Developed and architected with the assistance of **Gemini** and **Google DeepMind Antigravity**, enabling the complete Kotlin Multiplatform implementation, dual-OS native network socket layers, and automated zero-Mac CI/CD deployment pipeline.
+
+---
+
+## 📄 License
+This project is open-source under the [MIT License](LICENSE).
