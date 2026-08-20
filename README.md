@@ -12,7 +12,7 @@ A mobile remote control application for **Loewe Smart TVs** (specifically **Loew
   * Volume & Program Rockers with direct EPG (Electronic Program Guide) trigger.
   * Interactive Red, Green, Yellow, and Blue color function keys.
   * Collapsible 0–9 numeric keypad with direct Radio mode switcher.
-* **Dual RC Alphabet Support:** Full support for both standard remote operations (`alphabet="l2700"`) and dedicated DVR/HDR playback controls (`alphabet="l2700-hdr"`: Play, Pause, Stop, Fast-Forward, Rewind, Record).
+* **Dual RC Alphabet Support:** Support for standard remote operations (`alphabet="l2700"`) and dedicated DVR/HDR playback controls (`alphabet="l2700-hdr"`: Play, Pause, Stop, Fast-Forward, Rewind, Record).
 * **Smart Power & Wake-on-LAN (WoL):**
   * Automatic fallback: If the TV is in deep standby (SOAP server offline), tapping the Power button automatically broadcasts a 102-byte UDP Magic Packet (`Port 9`) to wake the TV, waits for the network stack, and completes the handshake.
   * Dedicated manual `⚡ WoL` broadcast button in the header.
@@ -20,7 +20,7 @@ A mobile remote control application for **Loewe Smart TVs** (specifically **Loew
 
 ## 📡 Compatibility
 
-Engineered and verified for **Loewe bild 5 (Chassis SL420)** running Loewe OS.
+Built for **Loewe bild 5 (Chassis SL420)**.
 
 Also compatible with all Loewe TV chassis supporting the Loewe Remote TV Tablet SOAP API:
 * **SL3xx / SL4xx / SL5xx (Loewe OS):** Loewe bild 1, bild 2, bild 3, bild 4, bild 5, bild 7, bild 9, Reference, Individual, Connect, and Art.
