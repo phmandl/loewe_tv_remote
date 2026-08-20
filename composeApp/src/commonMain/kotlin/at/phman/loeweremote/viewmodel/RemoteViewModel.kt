@@ -96,6 +96,7 @@ class RemoteViewModel(
                 // Smart Fallback: If Power button was pressed and TV is in deep standby (SOAP unreachable),
                 // automatically broadcast Wake-on-LAN if MAC address is available.
                 if ((key == LoeweKey.POWER || key == LoeweKey.TV_ON) && _settingsState.value.macAddress.isNotBlank()) {
+                    _uiState.update { it.copy(isSendingCommand = false) }
                     log("TV unreachable via SOAP (sleep mode). Automatically broadcasting Wake-on-LAN...")
                     sendWakeOnLan()
                     return@launch

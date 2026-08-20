@@ -39,6 +39,10 @@ import at.phman.loeweremote.ui.theme.LoeweTextMuted
 import at.phman.loeweremote.ui.theme.LoeweTextPrimary
 import at.phman.loeweremote.ui.theme.LoeweTextSecondary
 
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsDialog(
@@ -60,7 +64,9 @@ fun SettingsDialog(
                 .clip(RoundedCornerShape(24.dp))
                 .background(LoeweSurfaceDark)
                 .border(1.dp, LoeweBorder, RoundedCornerShape(24.dp))
-                .padding(20.dp),
+                .padding(20.dp)
+                .imePadding()
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Header

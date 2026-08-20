@@ -94,18 +94,17 @@ class LoeweSoapClient(
         settings: RemoteSettingsState,
         alphabet: String = "l2700"
     ): Result<Unit> {
-        // Step 1: Ensure we have an active session
-        var session = activeSession
-        if (session == null) {
-            val authResult = requestAccess(settings)
-            if (authResult.isFailure) {
-                return Result.failure(authResult.exceptionOrNull() ?: Exception("Authentication failed"))
+        // Step 1: Ensure we have an active session (Mutex protected to avoid race conditions)
+        val session: LoeweSession = mutex.withLock {
+            var current = activeSession
+            if (current == null) {
+                val authResult = requestAccess(settings)
+                if (authResult.isFailure) {
+                    return Result.failure(authResult.exceptionOrNull() ?: Exception("Authentication failed"))
+                }
+                current = authResult.getOrNull()
             }
-            session = authResult.getOrNull()
-        }
-
-        if (session == null) {
-            return Result.failure(Exception("Could not obtain session from Loewe TV"))
+            current ?: return Result.failure(Exception("Could not obtain session from Loewe TV"))
         }
 
         // Step 2: Attempt key injection
@@ -157,7 +156,7 @@ class LoeweSoapClient(
     }
 
     private fun extractTagValue(xml: String, tag: String): String? {
-        val regex = Regex("<(?:.*:)?$tag>(.*?)</(?:.*:)?$tag>", RegexOption.IGNORE_CASE)
+        val regex = Regex("<(?:[a-zA-Z0-9_-]+:)?$tag(?:\\s+[^>]*)?>(.*?)</(?:[a-zA-Z0-9_-]+:)?$tag>", RegexOption.IGNORE_CASE)
         val match = regex.find(xml)
         return match?.groupValues?.get(1)?.trim()
     }

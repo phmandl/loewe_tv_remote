@@ -9,6 +9,7 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.sizeOf
+import kotlinx.cinterop.toKString
 import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
 import platform.posix.AF_INET
@@ -17,17 +18,21 @@ import platform.posix.SOCK_DGRAM
 import platform.posix.SOL_SOCKET
 import platform.posix.SO_BROADCAST
 import platform.posix.close
+import platform.posix.errno
 import platform.posix.sendto
 import platform.posix.setsockopt
 import platform.posix.sockaddr_in
 import platform.posix.socket
+import platform.posix.strerror
 
 actual object PlatformWolSender {
     @OptIn(ExperimentalForeignApi::class)
     actual fun sendPacket(bytes: ByteArray, port: Int): Result<Unit> = runCatching {
         val sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
         if (sock < 0) {
-            throw Exception("Failed to create UDP socket: error code $sock")
+            val err = errno
+            val errStr = strerror(err)?.toKString() ?: "unknown"
+            throw Exception("Failed to create UDP socket: errno $err ($errStr)")
         }
 
         try {
@@ -42,7 +47,9 @@ actual object PlatformWolSender {
                     sizeOf<IntVar>().convert()
                 )
                 if (optResult < 0) {
-                    throw Exception("Failed to configure SO_BROADCAST on socket")
+                    val err = errno
+                    val errStr = strerror(err)?.toKString() ?: "unknown"
+                    throw Exception("Failed to configure SO_BROADCAST on socket: errno $err ($errStr)")
                 }
 
                 val targetAddr = alloc<sockaddr_in>()
@@ -62,7 +69,9 @@ actual object PlatformWolSender {
                         sizeOf<sockaddr_in>().convert()
                     )
                     if (sent < 0) {
-                        throw Exception("Failed to send UDP packet: code $sent")
+                        val err = errno
+                        val errStr = strerror(err)?.toKString() ?: "unknown"
+                        throw Exception("Failed to send UDP packet: errno $err ($errStr)")
                     }
                 }
             }
