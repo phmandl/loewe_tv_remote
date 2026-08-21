@@ -11,6 +11,9 @@ class RemoteSettings(
     companion object {
         private const val KEY_IP_ADDRESS = "loewe_tv_ip"
         private const val KEY_MAC_ADDRESS = "loewe_tv_mac"
+        private const val KEY_MANUAL_MAC_ADDRESS = "loewe_manual_mac"
+        private const val KEY_AUTO_MAC_ADDRESS = "loewe_auto_mac"
+        private const val KEY_AUTO_MAC_DISCOVERY = "loewe_auto_mac_discovery"
         private const val KEY_PORT = "loewe_tv_port"
         private const val KEY_DEVICE_ID = "loewe_device_id"
         private const val KEY_DEVICE_NAME = "loewe_device_name"
@@ -22,12 +25,16 @@ class RemoteSettings(
         private const val DEFAULT_DEVICE_ID = "KMP-Loewe-Client-01"
         private const val DEFAULT_DEVICE_NAME = "Loewe Remote App"
         private const val DEFAULT_SHOW_CONSOLE_LOG = false
+        private const val DEFAULT_AUTO_MAC_DISCOVERY = true
     }
 
     fun getSettings(): RemoteSettingsState {
         return runCatching {
             val ip = settings.getString(KEY_IP_ADDRESS, DEFAULT_IP)
             val mac = settings.getString(KEY_MAC_ADDRESS, DEFAULT_MAC)
+            val manualMac = settings.getString(KEY_MANUAL_MAC_ADDRESS, mac)
+            val autoMac = settings.getString(KEY_AUTO_MAC_ADDRESS, "")
+            val autoMacDiscovery = settings.getBoolean(KEY_AUTO_MAC_DISCOVERY, DEFAULT_AUTO_MAC_DISCOVERY)
             val port = settings.getInt(KEY_PORT, DEFAULT_PORT)
             val deviceId = settings.getString(KEY_DEVICE_ID, DEFAULT_DEVICE_ID)
             val deviceName = settings.getString(KEY_DEVICE_NAME, DEFAULT_DEVICE_NAME)
@@ -36,6 +43,9 @@ class RemoteSettings(
             RemoteSettingsState(
                 ipAddress = ip,
                 macAddress = mac,
+                manualMacAddress = manualMac,
+                autoMacAddress = autoMac,
+                autoMacDiscovery = autoMacDiscovery,
                 port = port,
                 deviceId = deviceId,
                 deviceName = deviceName,
@@ -45,6 +55,9 @@ class RemoteSettings(
             RemoteSettingsState(
                 ipAddress = DEFAULT_IP,
                 macAddress = DEFAULT_MAC,
+                manualMacAddress = DEFAULT_MAC,
+                autoMacAddress = "",
+                autoMacDiscovery = DEFAULT_AUTO_MAC_DISCOVERY,
                 port = DEFAULT_PORT,
                 deviceId = DEFAULT_DEVICE_ID,
                 deviceName = DEFAULT_DEVICE_NAME,
@@ -56,7 +69,10 @@ class RemoteSettings(
     fun saveSettings(state: RemoteSettingsState) {
         runCatching {
             settings[KEY_IP_ADDRESS] = state.ipAddress.trim()
-            settings[KEY_MAC_ADDRESS] = state.macAddress.trim()
+            settings[KEY_MAC_ADDRESS] = state.effectiveMacAddress.trim()
+            settings[KEY_MANUAL_MAC_ADDRESS] = state.manualMacAddress.trim()
+            settings[KEY_AUTO_MAC_ADDRESS] = state.autoMacAddress.trim()
+            settings[KEY_AUTO_MAC_DISCOVERY] = state.autoMacDiscovery
             settings[KEY_PORT] = state.port
             settings[KEY_DEVICE_ID] = state.deviceId.trim()
             settings[KEY_DEVICE_NAME] = state.deviceName.trim()

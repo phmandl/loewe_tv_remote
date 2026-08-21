@@ -29,6 +29,7 @@ class RemoteViewModel(
     val uiState: StateFlow<RemoteUiState> = _uiState.asStateFlow()
 
     private var statusClearJob: Job? = null
+    private var volumeDebounceJob: Job? = null
 
     init {
         // Initial silent check/handshake if IP is configured
@@ -56,6 +57,10 @@ class RemoteViewModel(
                 }
                 log("Connected! Session: ${session.clientId} (fcid=${session.fcid})")
                 scheduleStatusClear()
+
+                // Execute Phase 1 automatic discovery and initial state refresh
+                refreshDeviceData()
+                refreshTvState()
             }.onFailure { error ->
                 _uiState.update {
                     it.copy(
@@ -70,9 +75,165 @@ class RemoteViewModel(
     }
 
     /**
+     * Phase 1: Query TV hardware metadata and auto-populate MAC address for Wake-on-LAN.
+     */
+    fun refreshDeviceData() {
+        viewModelScope.launch {
+            val result = soapClient.getDeviceData(_settingsState.value)
+            result.onSuccess { data ->
+                _uiState.update {
+                    it.copy(
+                        tvChassis = data.chassis,
+                        tvSoftwareVersion = data.swVersion,
+                        tvNetworkHostName = data.networkHostName
+                    )
+                }
+                log("Hardware: ${data.displayModel}, SW: ${data.swVersion ?: "N/A"}")
+
+                // Auto-save discovered MAC address
+                val autoMac = data.preferredMacAddress
+                if (!autoMac.isNullOrBlank()) {
+                    val updatedSettings = _settingsState.value.copy(
+                        autoMacAddress = autoMac,
+                        macAddress = if (_settingsState.value.autoMacDiscovery) autoMac else _settingsState.value.macAddress
+                    )
+                    settingsRepository.saveSettings(updatedSettings)
+                    _settingsState.value = updatedSettings
+                    log("Discovered TV MAC: $autoMac (Auto-mode: ${_settingsState.value.autoMacDiscovery})")
+                }
+            }.onFailure { error ->
+                log("Device discovery warning: ${error.message}")
+            }
+        }
+    }
+
+    /**
+     * Phase 1: Refresh live TV power, playback status, volume level, and mute state.
+     */
+    fun refreshTvState() {
+        viewModelScope.launch {
+            // 1. Live status & power
+            soapClient.getCurrentStatus(_settingsState.value).onSuccess { status ->
+                _uiState.update {
+                    it.copy(tvPowerState = status.power)
+                }
+            }
+
+            // 2. Volume level
+            soapClient.getVolume(_settingsState.value).onSuccess { vol ->
+                _uiState.update {
+                    it.copy(volume = vol)
+                }
+            }
+
+            // 3. Mute state
+            soapClient.getMute(_settingsState.value).onSuccess { muted ->
+                _uiState.update {
+                    it.copy(isMuted = muted)
+                }
+            }
+
+            // 4. TV System Settings (WolEnable, WolInteractive)
+            soapClient.getSettings(_settingsState.value).onSuccess { tvSettings ->
+                _uiState.update {
+                    it.copy(
+                        tvWolEnable = tvSettings.wolEnable,
+                        tvWolInteractive = tvSettings.wolInteractive
+                    )
+                }
+                if (tvSettings.wolEnable == false) {
+                    log("TV Diagnostic: Wake on LAN is disabled on TV")
+                } else if (tvSettings.wolInteractive == false) {
+                    log("TV Diagnostic: WoL is Standby-only (WolInteractive=0)")
+                } else if (tvSettings.isWolOptimal) {
+                    log("TV Diagnostic: Wake on LAN is 100% active & interactive")
+                }
+            }
+        }
+    }
+
+    /**
+     * Update TV Wake on LAN settings directly on the TV via SetSetting SOAP API.
+     */
+    fun setTvWolSettings(wolEnable: Boolean, wolInteractive: Boolean) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(tvWolEnable = wolEnable, tvWolInteractive = wolInteractive)
+            }
+            log("Configuring TV: WolEnable=$wolEnable, WolInteractive=$wolInteractive...")
+            val r1 = soapClient.setSetting("WolEnable", if (wolEnable) "1" else "0", _settingsState.value)
+            val r2 = soapClient.setSetting("WolInteractive", if (wolInteractive) "1" else "0", _settingsState.value)
+            if (r1.isSuccess && r2.isSuccess) {
+                log("TV WoL Settings successfully updated on TV!")
+            } else {
+                log("Warning updating TV WoL settings: ${r1.exceptionOrNull()?.message ?: r2.exceptionOrNull()?.message}")
+            }
+            refreshTvState()
+        }
+    }
+
+    /**
+     * Phase 1: Step volume up/down with optimistic 0ms UI update and debounced network call.
+     */
+    fun stepVolume(delta: Int) {
+        val currentVol = _uiState.value.volume ?: 25
+        val target = (currentVol + delta).coerceIn(0, 100)
+        _uiState.update { it.copy(volume = target, isMuted = false) }
+        log("Vol: $target")
+        scheduleSetVolume(target)
+    }
+
+    /**
+     * Phase 1: Direct volume setting.
+     */
+    fun setVolume(targetVolume: Int) {
+        val target = targetVolume.coerceIn(0, 100)
+        _uiState.update { it.copy(volume = target, isMuted = false) }
+        log("Set Vol: $target")
+        scheduleSetVolume(target)
+    }
+
+    private fun scheduleSetVolume(targetVolume: Int) {
+        volumeDebounceJob?.cancel()
+        volumeDebounceJob = viewModelScope.launch {
+            delay(160) // 160ms debounce to prevent rapid network spam
+            val result = soapClient.setVolume(targetVolume, _settingsState.value)
+            result.onFailure { err ->
+                log("Volume adjust failed: ${err.message}")
+            }
+        }
+    }
+
+    /**
+     * Phase 1: Toggle mute deterministically via GetMute / SetMute.
+     */
+    fun toggleMute() {
+        val targetMuted = !_uiState.value.isMuted
+        _uiState.update { it.copy(isMuted = targetMuted) }
+        log(if (targetMuted) "Muting TV..." else "Unmuting TV...")
+
+        viewModelScope.launch {
+            val result = soapClient.setMute(targetMuted, _settingsState.value)
+            result.onSuccess {
+                log(if (targetMuted) "TV Muted (Active)" else "TV Unmuted")
+            }.onFailure { err ->
+                // Fallback to sending standard Mute key for older chassis
+                soapClient.sendKey(LoeweKey.MUTE, _settingsState.value)
+                log("Mute toggle sent: ${err.message}")
+            }
+        }
+    }
+
+    /**
      * Send remote control key to TV.
      */
     fun sendKey(key: LoeweKey) {
+        // Intercept Mute key from TopControls to use two-way toggleMute()
+        if (key == LoeweKey.MUTE) {
+            toggleMute()
+            return
+        }
+
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
@@ -92,10 +253,16 @@ class RemoteViewModel(
                     )
                 }
                 log("OK: ${key.label} sent successfully")
+
+                // Update state on power or volume key changes
+                if (key == LoeweKey.POWER || key == LoeweKey.TV_ON || key == LoeweKey.TV_OFF) {
+                    delay(1200)
+                    refreshTvState()
+                }
             }.onFailure { error ->
                 // Smart Fallback: If Power button was pressed and TV is in deep standby (SOAP unreachable),
                 // automatically broadcast Wake-on-LAN if MAC address is available.
-                if ((key == LoeweKey.POWER || key == LoeweKey.TV_ON) && _settingsState.value.macAddress.isNotBlank()) {
+                if ((key == LoeweKey.POWER || key == LoeweKey.TV_ON) && _settingsState.value.effectiveMacAddress.isNotBlank()) {
                     _uiState.update { it.copy(isSendingCommand = false) }
                     log("TV unreachable via SOAP (sleep mode). Automatically broadcasting Wake-on-LAN...")
                     sendWakeOnLan()
@@ -150,7 +317,7 @@ class RemoteViewModel(
      * Broadcast Wake-on-LAN Magic Packet to wake the Loewe TV from Standby.
      */
     fun sendWakeOnLan() {
-        val mac = _settingsState.value.macAddress.trim()
+        val mac = _settingsState.value.effectiveMacAddress.trim()
         if (mac.isBlank()) {
             _uiState.update {
                 it.copy(
@@ -176,7 +343,6 @@ class RemoteViewModel(
                     )
                 }
                 log("WoL Magic Packet sent to $mac. Waiting 3s for TV network stack...")
-                // Try connecting after a brief delay for the TV network stack to boot
                 delay(3000)
                 connect(silent = true)
             }.onFailure { error ->
@@ -197,7 +363,6 @@ class RemoteViewModel(
     }
 
     private fun log(message: String) {
-        val timestamp = "" // Kotlin Multiplatform friendly
         _uiState.update { current ->
             val updated = (current.logs + message).takeLast(40)
             current.copy(logs = updated)

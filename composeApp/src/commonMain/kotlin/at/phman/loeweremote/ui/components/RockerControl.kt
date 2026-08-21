@@ -3,6 +3,7 @@ package at.phman.loeweremote.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,19 +16,25 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.phman.loeweremote.model.LoeweKey
 import at.phman.loeweremote.ui.theme.AnthropicBorder
-import at.phman.loeweremote.ui.theme.AnthropicGoldBorder
 import at.phman.loeweremote.ui.theme.AnthropicMuted
 import at.phman.loeweremote.ui.theme.AnthropicParchment
 import at.phman.loeweremote.ui.theme.AnthropicSand
@@ -35,10 +42,14 @@ import at.phman.loeweremote.ui.theme.AnthropicSurfaceDark
 import at.phman.loeweremote.ui.theme.AnthropicSurfaceElevated
 import at.phman.loeweremote.ui.theme.AnthropicTerracotta
 import at.phman.loeweremote.ui.theme.AnthropicTerracottaBg
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @Composable
 fun RockerControl(
     onKeyClick: (LoeweKey) -> Unit,
+    onVolumeStep: (delta: Int) -> Unit,
+    volume: Int?,
     onToggleNumpad: () -> Unit,
     isNumpadExpanded: Boolean,
     modifier: Modifier = Modifier,
@@ -57,13 +68,13 @@ fun RockerControl(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // VOLUME ROCKER (Greek Stele / Column Style)
-        VerticalRocker(
-            label = "VOL",
+        // VOLUME ROCKER (Greek Stele / Column Style with live volume readout & continuous long-press hold)
+        VolumeRocker(
+            volume = volume,
             height = rockerHeight,
             width = rockerWidth,
-            onPlusClick = { onKeyClick(LoeweKey.VOLUME_UP) },
-            onMinusClick = { onKeyClick(LoeweKey.VOLUME_DOWN) }
+            onPlusStep = { onVolumeStep(1) },
+            onMinusStep = { onVolumeStep(-1) }
         )
 
         // CENTER QUICK ACCESS (EPG & Numpad toggle - Exact sum height & same width as rockers)
@@ -112,7 +123,7 @@ fun RockerControl(
         }
 
         // PROGRAM / CHANNEL ROCKER
-        VerticalRocker(
+        ProgramRocker(
             label = "PROG",
             height = rockerHeight,
             width = rockerWidth,
@@ -123,7 +134,130 @@ fun RockerControl(
 }
 
 @Composable
-private fun VerticalRocker(
+private fun VolumeRocker(
+    volume: Int?,
+    height: Dp,
+    width: Dp,
+    onPlusStep: () -> Unit,
+    onMinusStep: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val symbolSize = (height.value * 0.18f).coerceIn(18f, 24f).sp
+
+    Column(
+        modifier = modifier
+            .width(width)
+            .height(height)
+            .clip(RoundedCornerShape(26.dp))
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        AnthropicSurfaceElevated,
+                        AnthropicSurfaceDark
+                    )
+                )
+            )
+            .border(1.2.dp, AnthropicBorder, RoundedCornerShape(26.dp)),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        // PLUS (+) with continuous hold repeat
+        RockerHoldButton(
+            symbol = "+",
+            fontSize = symbolSize,
+            onStep = onPlusStep,
+            modifier = Modifier.weight(1f)
+        )
+
+        // CENTER READOUT (Live numerical volume or classical VOL label)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            if (volume != null) {
+                Text(
+                    text = "$volume",
+                    color = AnthropicParchment,
+                    fontSize = (height.value * 0.14f).coerceIn(13f, 17f).sp,
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "VOL",
+                    color = AnthropicMuted.copy(alpha = 0.65f),
+                    fontSize = (height.value * 0.055f).coerceIn(7f, 9f).sp,
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.5.sp
+                )
+            } else {
+                Text(
+                    text = "VOL",
+                    color = AnthropicMuted,
+                    fontSize = (height.value * 0.08f).coerceIn(9f, 11f).sp,
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+            }
+        }
+
+        // MINUS (−) with continuous hold repeat
+        RockerHoldButton(
+            symbol = "−",
+            fontSize = symbolSize,
+            onStep = onMinusStep,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun RockerHoldButton(
+    symbol: String,
+    fontSize: TextUnit,
+    onStep: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var isPressed by remember { mutableStateOf(false) }
+    val currentOnStep by rememberUpdatedState(onStep)
+
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            delay(320) // Initial hold threshold before continuous ramp
+            while (isActive && isPressed) {
+                currentOnStep()
+                delay(120) // Continuous tick interval
+            }
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        currentOnStep() // Instant step on initial touch
+                        isPressed = true
+                        tryAwaitRelease()
+                        isPressed = false
+                    }
+                )
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = symbol,
+            color = AnthropicParchment,
+            fontSize = fontSize,
+            fontWeight = FontWeight.Light
+        )
+    }
+}
+
+@Composable
+private fun ProgramRocker(
     label: String,
     height: Dp,
     width: Dp,
@@ -164,7 +298,7 @@ private fun VerticalRocker(
             )
         }
 
-        // CENTER LABEL (Classical Serif Pillar Inscription)
+        // CENTER LABEL
         Text(
             text = label,
             color = AnthropicMuted,
@@ -191,4 +325,3 @@ private fun VerticalRocker(
         }
     }
 }
-

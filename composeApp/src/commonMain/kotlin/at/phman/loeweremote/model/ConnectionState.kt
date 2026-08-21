@@ -18,5 +18,13 @@ data class RemoteUiState(
     val isWolSending: Boolean = false,
     val showSettings: Boolean = false,
     val isNumpadExpanded: Boolean = false,
+    val volume: Int? = null,
+    val isMuted: Boolean = false,
+    val tvPowerState: String? = null,
+    val tvChassis: String? = null,
+    val tvSoftwareVersion: String? = null,
+    val tvNetworkHostName: String? = null,
+    val tvWolEnable: Boolean? = null,
+    val tvWolInteractive: Boolean? = null,
     val logs: List<String> = listOf("Loewe Remote ready. Tap ⚙ Settings to configure TV.")
 )

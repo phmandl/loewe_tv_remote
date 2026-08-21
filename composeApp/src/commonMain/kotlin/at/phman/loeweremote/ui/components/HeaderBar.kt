@@ -40,6 +40,8 @@ import at.phman.loeweremote.ui.theme.GreekStatusError
 @Composable
 fun HeaderBar(
     connectionState: ConnectionState,
+    tvChassis: String? = null,
+    tvPowerState: String? = null,
     isWolSending: Boolean,
     isSendingCommand: Boolean,
     onStatusClick: () -> Unit,
@@ -57,9 +59,16 @@ fun HeaderBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Connection Status Pill (Enlarged)
+            // Connection Status Pill with auto-detected chassis & live power mode
             val (statusColor, statusText) = when (connectionState) {
-                is ConnectionState.Connected -> Pair(GreekStatusConnected, "bild 5 Online")
+                is ConnectionState.Connected -> {
+                    val deviceLabel = if (!tvChassis.isNullOrBlank()) "Loewe $tvChassis" else "Loewe bild"
+                    if (tvPowerState?.equals("idle", ignoreCase = true) == true) {
+                        Pair(GreekStatusConnecting, "$deviceLabel (Standby)")
+                    } else {
+                        Pair(GreekStatusConnected, "$deviceLabel Online")
+                    }
+                }
                 is ConnectionState.Connecting -> Pair(GreekStatusConnecting, "Connecting...")
                 is ConnectionState.Disconnected -> Pair(GreekStatusDisconnected, "Offline")
                 is ConnectionState.Error -> Pair(GreekStatusError, "Error (Retry)")
@@ -98,7 +107,7 @@ fun HeaderBar(
                 }
             }
 
-            // Action buttons (WoL & Settings - Enlarged)
+            // Action buttons (WoL & Settings)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -152,5 +161,3 @@ fun HeaderBar(
         }
     }
 }
-
-

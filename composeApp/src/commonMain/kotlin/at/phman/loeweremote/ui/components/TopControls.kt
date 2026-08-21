@@ -34,6 +34,7 @@ import at.phman.loeweremote.ui.theme.AnthropicTerracottaBg
 @Composable
 fun TopControls(
     onKeyClick: (LoeweKey) -> Unit,
+    isMuted: Boolean = false,
     modifier: Modifier = Modifier,
     buttonSize: Dp = 56.dp
 ) {
@@ -103,21 +104,21 @@ fun TopControls(
             )
         }
 
-        // Mute Button
+        // Mute Button (Dedicated Top Right with live mute highlight)
         RemoteButton(
             onClick = { onKeyClick(LoeweKey.MUTE) },
-            backgroundColor = AnthropicSurfaceElevated,
-            borderColor = AnthropicBorder,
+            backgroundColor = if (isMuted) AnthropicTerracottaBg else AnthropicSurfaceElevated,
+            borderColor = if (isMuted) AnthropicTerracotta else AnthropicBorder,
             shape = CircleShape,
             minSize = buttonSize,
             modifier = Modifier.size(buttonSize)
         ) {
             Text(
                 text = "MUTE",
-                color = AnthropicSand,
+                color = if (isMuted) AnthropicTerracotta else AnthropicSand,
                 fontSize = fontSize,
                 fontFamily = FontFamily.Serif,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = if (isMuted) FontWeight.Bold else FontWeight.SemiBold,
                 letterSpacing = 0.5.sp,
                 maxLines = 1,
                 softWrap = false,
@@ -159,4 +160,3 @@ fun PowerIcon(
         )
     }
 }
-

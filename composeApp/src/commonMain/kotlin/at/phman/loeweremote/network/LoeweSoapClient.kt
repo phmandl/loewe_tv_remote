@@ -1,6 +1,9 @@
 package at.phman.loeweremote.network
 
+import at.phman.loeweremote.model.LoeweDeviceData
 import at.phman.loeweremote.model.LoeweKey
+import at.phman.loeweremote.model.LoeweTvSettings
+import at.phman.loeweremote.model.LoeweTvStatus
 import at.phman.loeweremote.model.RemoteSettingsState
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
@@ -41,8 +44,7 @@ class LoeweSoapClient(
     }
 
     /**
-     * Request access to the Loewe TV.
-     * Reference: hass-loewetv-remoteapi (custom_components/loewe/soap.py)
+     * Request access to the Loewe TV (Sec 9.1).
      */
     suspend fun requestAccess(settings: RemoteSettingsState): Result<LoeweSession> = mutex.withLock {
         performRequestAccess(settings)
@@ -52,7 +54,7 @@ class LoeweSoapClient(
         val url = settings.endpointUrl
         val payload = buildRequestAccessPayload(
             deviceName = settings.deviceName,
-            deviceUuid = settings.macAddress.replace(":", "").replace("-", "").ifBlank { "001122334455" }
+            deviceUuid = settings.effectiveMacAddress.replace(":", "").replace("-", "").ifBlank { "001122334455" }
         )
 
         val response: HttpResponse = httpClient.post(url) {
@@ -81,7 +83,7 @@ class LoeweSoapClient(
     }
 
     /**
-     * Ingest a remote control key command to the TV.
+     * Ingest a remote control key command to the TV (Sec 9.4.1).
      * Automatically attempts handshake if not connected or if session expired.
      */
     suspend fun sendKey(key: LoeweKey, settings: RemoteSettingsState): Result<Unit> {
@@ -89,14 +91,167 @@ class LoeweSoapClient(
     }
 
     /**
-     * Ingest a raw integer key code to the TV.
+     * Ingest a raw integer key code to the TV (Sec 9.4.1).
      */
     suspend fun sendKeyCode(
         keyCode: Int,
         settings: RemoteSettingsState,
         alphabet: String = "l2700"
     ): Result<Unit> {
-        // Step 1: Ensure we have an active session (Mutex protected to avoid race conditions)
+        return executeSoapAction(
+            action = "InjectRCKey",
+            settings = settings,
+            payloadBuilder = { session ->
+                buildInjectKeyPayload(session.fcid, session.clientId, keyCode, alphabet)
+            }
+        ).map { }
+    }
+
+    /**
+     * Retrieve hardware info, MAC addresses, and chassis data from TV (Sec 9.2).
+     */
+    suspend fun getDeviceData(settings: RemoteSettingsState): Result<LoeweDeviceData> {
+        return executeSoapAction(
+            action = "GetDeviceData",
+            settings = settings,
+            payloadBuilder = { session ->
+                buildGetDeviceDataPayload(session.fcid, session.clientId)
+            }
+        ).map { xml ->
+            LoeweDeviceData(
+                chassis = extractTagValue(xml, "Chassis"),
+                swVersion = extractTagValue(xml, "SW-Version"),
+                macAddressLan = extractTagValue(xml, "MAC-Address-LAN"),
+                macAddressWlan = extractTagValue(xml, "MAC-Address-WLAN"),
+                macAddress = extractTagValue(xml, "MAC-Address"),
+                location = extractTagValue(xml, "Location"),
+                networkHostName = extractTagValue(xml, "NetworkHostName"),
+                streamingServerName = extractTagValue(xml, "StreamingServerName")
+            )
+        }
+    }
+
+    /**
+     * Retrieve current TV volume level (0–100%) (Sec 9.4.5).
+     */
+    suspend fun getVolume(settings: RemoteSettingsState): Result<Int> {
+        return executeSoapAction(
+            action = "GetVolume",
+            settings = settings,
+            payloadBuilder = { session ->
+                buildGetVolumePayload(session.fcid, session.clientId)
+            }
+        ).map { xml ->
+            val rawValue = extractTagValue(xml, "Value")?.toIntOrNull() ?: 0
+            (rawValue / 10000).coerceIn(0, 100)
+        }
+    }
+
+    /**
+     * Set absolute TV volume level (0–100%) (Sec 9.4.5).
+     */
+    suspend fun setVolume(volume: Int, settings: RemoteSettingsState): Result<Unit> {
+        val scaledValue = volume.coerceIn(0, 100) * 10000
+        return executeSoapAction(
+            action = "SetVolume",
+            settings = settings,
+            payloadBuilder = { session ->
+                buildSetVolumePayload(session.fcid, session.clientId, scaledValue)
+            }
+        ).map { }
+    }
+
+    /**
+     * Query current mute state (Sec 9.4.6).
+     */
+    suspend fun getMute(settings: RemoteSettingsState): Result<Boolean> {
+        return executeSoapAction(
+            action = "GetMute",
+            settings = settings,
+            payloadBuilder = { session ->
+                buildGetMutePayload(session.fcid, session.clientId)
+            }
+        ).map { xml ->
+            val rawValue = extractTagValue(xml, "Value")
+            rawValue == "1"
+        }
+    }
+
+    /**
+     * Set explicit mute state (Sec 9.4.6).
+     */
+    suspend fun setMute(isMuted: Boolean, settings: RemoteSettingsState): Result<Unit> {
+        return executeSoapAction(
+            action = "SetMute",
+            settings = settings,
+            payloadBuilder = { session ->
+                buildSetMutePayload(session.fcid, session.clientId, if (isMuted) 1 else 0)
+            }
+        ).map { }
+    }
+
+    /**
+     * Query current TV power, player state, and system lock status (Sec 9.11).
+     */
+    suspend fun getCurrentStatus(settings: RemoteSettingsState): Result<LoeweTvStatus> {
+        return executeSoapAction(
+            action = "GetCurrentStatus",
+            settings = settings,
+            payloadBuilder = { session ->
+                buildGetCurrentStatusPayload(session.fcid, session.clientId)
+            }
+        ).map { xml ->
+            LoeweTvStatus(
+                power = extractTagValue(xml, "Power"),
+                hdrPlayerState = extractTagValue(xml, "HdrPlayerState"),
+                hdrSpeed = extractTagValue(xml, "HdrSpeed"),
+                systemLocked = extractTagValue(xml, "SystemLocked")
+            )
+        }
+    }
+
+    /**
+     * Query TV system settings such as WolEnable, WolInteractive, Multiroom (Sec 9.19).
+     */
+    suspend fun getSettings(settings: RemoteSettingsState): Result<LoeweTvSettings> {
+        return executeSoapAction(
+            action = "GetSettings",
+            settings = settings,
+            payloadBuilder = { session ->
+                buildGetSettingsPayload(session.fcid, session.clientId)
+            }
+        ).map { xml ->
+            LoeweTvSettings(
+                wolEnable = extractTagValue(xml, "WolEnable")?.let { it == "1" },
+                wolInteractive = extractTagValue(xml, "WolInteractive")?.let { it == "1" },
+                multiroomActive = extractTagValue(xml, "MultiroomActive")?.let { it == "1" },
+                networkHostName = extractTagValue(xml, "NetworkHostName")
+            )
+        }
+    }
+
+    /**
+     * Set a TV system setting such as WolEnable, WolInteractive (Sec 9.19).
+     */
+    suspend fun setSetting(name: String, value: String, settings: RemoteSettingsState): Result<Unit> {
+        return executeSoapAction(
+            action = "SetSetting",
+            settings = settings,
+            payloadBuilder = { session ->
+                buildSetSettingPayload(session.fcid, session.clientId, name, value)
+            }
+        ).map { }
+    }
+
+    /**
+     * Executes a SOAP action with automatic session acquisition & 1-shot retry on session timeout.
+     */
+    private suspend fun executeSoapAction(
+        action: String,
+        settings: RemoteSettingsState,
+        payloadBuilder: (LoeweSession) -> String
+    ): Result<String> {
+        // Step 1: Ensure active session
         val session: LoeweSession = mutex.withLock {
             var current = activeSession
             if (current == null) {
@@ -109,39 +264,33 @@ class LoeweSoapClient(
             current ?: return Result.failure(Exception("Could not obtain session from Loewe TV"))
         }
 
-        // Step 2: Attempt key injection
-        val firstAttempt = executeInjectKey(keyCode, session, settings, alphabet)
+        // Step 2: First attempt
+        val firstAttempt = performHttpPost(action, payloadBuilder(session), settings)
         if (firstAttempt.isSuccess) {
-            return Result.success(Unit)
+            return firstAttempt
         }
 
-        // Step 3: Auto-reconnect & retry once if the first attempt failed
-        // (TV might have been restarted or session timed out)
+        // Step 3: Re-auth and retry once on failure
         val reAuthResult = requestAccess(settings)
         if (reAuthResult.isSuccess) {
             val newSession = reAuthResult.getOrNull() ?: return Result.failure(Exception("Re-auth failed"))
-            return executeInjectKey(keyCode, newSession, settings, alphabet)
+            return performHttpPost(action, payloadBuilder(newSession), settings)
         }
 
-        return Result.failure(
-            firstAttempt.exceptionOrNull() ?: Exception("Failed to send key $keyCode to Loewe TV")
-        )
+        return firstAttempt
     }
 
-    private suspend fun executeInjectKey(
-        keyCode: Int,
-        session: LoeweSession,
-        settings: RemoteSettingsState,
-        alphabet: String = "l2700"
-    ): Result<Unit> = runCatching {
+    private suspend fun performHttpPost(
+        soapAction: String,
+        payload: String,
+        settings: RemoteSettingsState
+    ): Result<String> = runCatching {
         val url = settings.endpointUrl
-        val payload = buildInjectKeyPayload(session.fcid, session.clientId, keyCode, alphabet)
-
         val response: HttpResponse = httpClient.post(url) {
             contentType(ContentType.parse("text/xml; charset=utf-8"))
             headers {
                 append("Accept", "*/*")
-                append("SOAPAction", "InjectRCKey")
+                append("SOAPAction", soapAction)
                 append(HttpHeaders.UserAgent, "LoeweRemote-KMP/1.0")
             }
             setBody(payload)
@@ -152,9 +301,14 @@ class LoeweSoapClient(
             throw Exception("HTTP ${response.status.value}: ${response.status.description}")
         }
 
-        if (body.contains("<soap:Fault>", ignoreCase = true) || body.contains("<soapenv:Fault>", ignoreCase = true) || body.contains("<Fault>", ignoreCase = true)) {
-            throw Exception("SOAP Fault returned by TV:\n$body")
+        if (body.contains("<soap:Fault>", ignoreCase = true) ||
+            body.contains("<soapenv:Fault>", ignoreCase = true) ||
+            body.contains("<Fault>", ignoreCase = true)
+        ) {
+            throw Exception("SOAP Fault for $soapAction:\n$body")
         }
+
+        body
     }
 
     private fun extractTagValue(xml: String, tag: String): String? {
@@ -195,8 +349,6 @@ class LoeweSoapClient(
         return """<?xml version="1.0" encoding="utf-8"?>
 <soapenv:Envelope
  xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
- xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
- xmlns:wse="http://www.w3.org/2009/02/ws-evt"
  xmlns:ltv="urn:loewe.de:RemoteTV:Tablet">
   <soapenv:Header/>
   <soapenv:Body>
@@ -208,6 +360,130 @@ class LoeweSoapClient(
         <ltv:RCKeyEvent alphabet="$alphabet" value="$keyCode" mode="release"/>
       </ltv:InputEventSequence>
     </ltv:InjectRCKey>
+  </soapenv:Body>
+</soapenv:Envelope>"""
+    }
+
+    private fun buildGetDeviceDataPayload(fcid: String, clientId: String): String {
+        return """<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope
+ xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:ltv="urn:loewe.de:RemoteTV:Tablet">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <ltv:GetDeviceData>
+      <ltv:fcid>$fcid</ltv:fcid>
+      <ltv:ClientId>$clientId</ltv:ClientId>
+    </ltv:GetDeviceData>
+  </soapenv:Body>
+</soapenv:Envelope>"""
+    }
+
+    private fun buildGetVolumePayload(fcid: String, clientId: String): String {
+        return """<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope
+ xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:ltv="urn:loewe.de:RemoteTV:Tablet">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <ltv:GetVolume>
+      <ltv:fcid>$fcid</ltv:fcid>
+      <ltv:ClientId>$clientId</ltv:ClientId>
+    </ltv:GetVolume>
+  </soapenv:Body>
+</soapenv:Envelope>"""
+    }
+
+    private fun buildSetVolumePayload(fcid: String, clientId: String, scaledVolume: Int): String {
+        return """<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope
+ xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:ltv="urn:loewe.de:RemoteTV:Tablet">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <ltv:SetVolume>
+      <ltv:fcid>$fcid</ltv:fcid>
+      <ltv:ClientId>$clientId</ltv:ClientId>
+      <ltv:Value>$scaledVolume</ltv:Value>
+    </ltv:SetVolume>
+  </soapenv:Body>
+</soapenv:Envelope>"""
+    }
+
+    private fun buildGetMutePayload(fcid: String, clientId: String): String {
+        return """<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope
+ xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:ltv="urn:loewe.de:RemoteTV:Tablet">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <ltv:GetMute>
+      <ltv:fcid>$fcid</ltv:fcid>
+      <ltv:ClientId>$clientId</ltv:ClientId>
+    </ltv:GetMute>
+  </soapenv:Body>
+</soapenv:Envelope>"""
+    }
+
+    private fun buildSetMutePayload(fcid: String, clientId: String, muteValue: Int): String {
+        return """<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope
+ xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:ltv="urn:loewe.de:RemoteTV:Tablet">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <ltv:SetMute>
+      <ltv:fcid>$fcid</ltv:fcid>
+      <ltv:ClientId>$clientId</ltv:ClientId>
+      <ltv:Value>$muteValue</ltv:Value>
+    </ltv:SetMute>
+  </soapenv:Body>
+</soapenv:Envelope>"""
+    }
+
+    private fun buildGetCurrentStatusPayload(fcid: String, clientId: String): String {
+        return """<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope
+ xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:ltv="urn:loewe.de:RemoteTV:Tablet">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <ltv:GetCurrentStatus>
+      <ltv:fcid>$fcid</ltv:fcid>
+      <ltv:ClientId>$clientId</ltv:ClientId>
+    </ltv:GetCurrentStatus>
+  </soapenv:Body>
+</soapenv:Envelope>"""
+    }
+
+    private fun buildGetSettingsPayload(fcid: String, clientId: String): String {
+        return """<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope
+ xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:ltv="urn:loewe.de:RemoteTV:Tablet">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <ltv:GetSettings>
+      <ltv:fcid>$fcid</ltv:fcid>
+      <ltv:ClientId>$clientId</ltv:ClientId>
+    </ltv:GetSettings>
+  </soapenv:Body>
+</soapenv:Envelope>"""
+    }
+
+    private fun buildSetSettingPayload(fcid: String, clientId: String, name: String, value: String): String {
+        return """<?xml version="1.0" encoding="utf-8"?>
+<soapenv:Envelope
+ xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+ xmlns:ltv="urn:loewe.de:RemoteTV:Tablet">
+  <soapenv:Header/>
+  <soapenv:Body>
+    <ltv:SetSetting>
+      <ltv:fcid>$fcid</ltv:fcid>
+      <ltv:ClientId>$clientId</ltv:ClientId>
+      <ltv:Name>$name</ltv:Name>
+      <ltv:Value>$value</ltv:Value>
+    </ltv:SetSetting>
   </soapenv:Body>
 </soapenv:Envelope>"""
     }

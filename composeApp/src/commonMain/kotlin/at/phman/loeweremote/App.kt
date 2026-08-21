@@ -103,6 +103,8 @@ fun App(
                         // 1. Header Bar: Connection Status + WoL + Settings (Enlarged)
                         HeaderBar(
                             connectionState = uiState.connectionState,
+                            tvChassis = uiState.tvChassis,
+                            tvPowerState = uiState.tvPowerState,
                             isWolSending = uiState.isWolSending,
                             isSendingCommand = uiState.isSendingCommand,
                             onStatusClick = { viewModel.connect() },
@@ -125,9 +127,10 @@ fun App(
 
                         Spacer(modifier = Modifier.height(6.dp))
 
-                        // 2. Top Controls: Power, Info, Menu, Mute
+                        // 2. Top Controls: Power, Info, Menu, Mute (Dedicated top-right mute with live state)
                         TopControls(
                             onKeyClick = { key -> viewModel.sendKey(key) },
+                            isMuted = uiState.isMuted,
                             buttonSize = topBtnSize
                         )
 
@@ -143,9 +146,11 @@ fun App(
                         // Equal spacing above the Rockers
                         Spacer(modifier = Modifier.height(rockerVerticalSpace))
 
-                        // 4. Volume & Channel Rockers + EPG / Numpad
+                        // 4. Volume & Channel Rockers + EPG / Numpad (with live volume & continuous hold)
                         RockerControl(
                             onKeyClick = { key -> viewModel.sendKey(key) },
+                            onVolumeStep = { delta -> viewModel.stepVolume(delta) },
+                            volume = uiState.volume,
                             onToggleNumpad = { viewModel.toggleNumpad() },
                             isNumpadExpanded = uiState.isNumpadExpanded,
                             rockerHeight = rockerHeight
@@ -195,6 +200,13 @@ fun App(
                 if (uiState.showSettings) {
                     SettingsDialog(
                         initialSettings = settingsState,
+                        tvChassis = uiState.tvChassis,
+                        tvSoftwareVersion = uiState.tvSoftwareVersion,
+                        tvWolEnable = uiState.tvWolEnable,
+                        tvWolInteractive = uiState.tvWolInteractive,
+                        onSaveTvWolSettings = { wolEnable, wolInteractive ->
+                            viewModel.setTvWolSettings(wolEnable, wolInteractive)
+                        },
                         onSave = { updated -> viewModel.saveSettings(updated) },
                         onDismiss = { viewModel.toggleSettings(false) }
                     )
