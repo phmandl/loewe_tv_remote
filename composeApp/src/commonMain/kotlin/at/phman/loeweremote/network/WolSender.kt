@@ -8,7 +8,7 @@ import kotlinx.coroutines.withContext
  * Low-level platform socket dispatcher for UDP Magic Packet broadcast.
  */
 expect object PlatformWolSender {
-    fun sendPacket(bytes: ByteArray, port: Int = 9): Result<Unit>
+    fun sendPacket(bytes: ByteArray, port: Int = 9, targetIp: String = ""): Result<Unit>
 }
 
 object WolHelper {
@@ -43,10 +43,10 @@ object WolHelper {
     /**
      * Broadcasts a Wake-on-LAN packet to port 9.
      */
-    suspend fun sendWakeOnLan(macAddress: String, port: Int = 9): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun sendWakeOnLan(macAddress: String, targetIp: String = "", port: Int = 9): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val packet = createMagicPacket(macAddress)
-            val result = PlatformWolSender.sendPacket(packet, port)
+            val result = PlatformWolSender.sendPacket(packet, port, targetIp)
             if (result.isFailure) {
                 throw result.exceptionOrNull() ?: Exception("Failed to broadcast WoL packet")
             }

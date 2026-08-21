@@ -6,7 +6,8 @@ data class RemoteSettingsState(
     val port: Int = 905,
     val deviceType: String = "KMP Native Remote",
     val deviceId: String = "KMP-Loewe-Client-01",
-    val deviceName: String = "Loewe Remote App"
+    val deviceName: String = "Loewe Remote App",
+    val showConsoleLog: Boolean = false
 ) {
     val endpointUrl: String
         get() = "http://${ipAddress.trim()}:$port/loewe_tablet_0001"

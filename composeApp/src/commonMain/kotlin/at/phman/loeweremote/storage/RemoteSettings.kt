@@ -14,12 +14,14 @@ class RemoteSettings(
         private const val KEY_PORT = "loewe_tv_port"
         private const val KEY_DEVICE_ID = "loewe_device_id"
         private const val KEY_DEVICE_NAME = "loewe_device_name"
+        private const val KEY_SHOW_CONSOLE_LOG = "loewe_show_console_log"
 
         private const val DEFAULT_IP = "192.168.1.100"
         private const val DEFAULT_MAC = ""
         private const val DEFAULT_PORT = 905
         private const val DEFAULT_DEVICE_ID = "KMP-Loewe-Client-01"
         private const val DEFAULT_DEVICE_NAME = "Loewe Remote App"
+        private const val DEFAULT_SHOW_CONSOLE_LOG = false
     }
 
     fun getSettings(): RemoteSettingsState {
@@ -29,13 +31,15 @@ class RemoteSettings(
             val port = settings.getInt(KEY_PORT, DEFAULT_PORT)
             val deviceId = settings.getString(KEY_DEVICE_ID, DEFAULT_DEVICE_ID)
             val deviceName = settings.getString(KEY_DEVICE_NAME, DEFAULT_DEVICE_NAME)
+            val showConsoleLog = settings.getBoolean(KEY_SHOW_CONSOLE_LOG, DEFAULT_SHOW_CONSOLE_LOG)
 
             RemoteSettingsState(
                 ipAddress = ip,
                 macAddress = mac,
                 port = port,
                 deviceId = deviceId,
-                deviceName = deviceName
+                deviceName = deviceName,
+                showConsoleLog = showConsoleLog
             )
         }.getOrDefault(
             RemoteSettingsState(
@@ -43,7 +47,8 @@ class RemoteSettings(
                 macAddress = DEFAULT_MAC,
                 port = DEFAULT_PORT,
                 deviceId = DEFAULT_DEVICE_ID,
-                deviceName = DEFAULT_DEVICE_NAME
+                deviceName = DEFAULT_DEVICE_NAME,
+                showConsoleLog = DEFAULT_SHOW_CONSOLE_LOG
             )
         )
     }
@@ -55,6 +60,7 @@ class RemoteSettings(
             settings[KEY_PORT] = state.port
             settings[KEY_DEVICE_ID] = state.deviceId.trim()
             settings[KEY_DEVICE_NAME] = state.deviceName.trim()
+            settings[KEY_SHOW_CONSOLE_LOG] = state.showConsoleLog
         }
     }
 }

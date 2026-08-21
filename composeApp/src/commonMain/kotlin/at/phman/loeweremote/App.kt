@@ -112,12 +112,16 @@ fun App(
 
                         Spacer(modifier = Modifier.height(3.dp))
 
-                        // 1b. Live Debug Terminal (Hermes console)
-                        ConsoleLogBar(
-                            logs = uiState.logs,
-                            onClear = { viewModel.clearLogs() },
-                            height = logBarHeight
-                        )
+                        // 1b. Live Debug Terminal (Hermes console) if enabled, otherwise blank spacer
+                        if (settingsState.showConsoleLog) {
+                            ConsoleLogBar(
+                                logs = uiState.logs,
+                                onClear = { viewModel.clearLogs() },
+                                height = logBarHeight
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(logBarHeight))
+                        }
 
                         Spacer(modifier = Modifier.height(6.dp))
 

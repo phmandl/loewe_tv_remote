@@ -55,6 +55,7 @@ fun SettingsDialog(
     var macAddress by remember { mutableStateOf(initialSettings.macAddress) }
     var portText by remember { mutableStateOf(initialSettings.port.toString()) }
     var deviceName by remember { mutableStateOf(initialSettings.deviceName) }
+    var showConsoleLog by remember { mutableStateOf(initialSettings.showConsoleLog) }
 
     BasicAlertDialog(
         onDismissRequest = onDismiss
@@ -86,7 +87,7 @@ fun SettingsDialog(
             }
 
             Text(
-                text = "Target: Loewe bild 5 (Chassis SL420, Loewe OS)",
+                text = "Target: Loewe bild TV (Chassis SL410 / SL420 / SL3xx / SL5xx)",
                 color = AnthropicMuted,
                 fontSize = 11.5.sp,
                 fontFamily = FontFamily.Serif
@@ -115,6 +116,32 @@ fun SettingsDialog(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Wake-on-LAN Information Card
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AnthropicSurfaceElevated)
+                    .border(1.dp, AnthropicBorder, RoundedCornerShape(10.dp))
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "⚡ Wake on LAN on Loewe TV",
+                    color = AnthropicTerracotta,
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "To enable WoL on your TV:\n1. System settings → Multimedia / Network\n2. Network configuration → Wake on LAN (On/Active)\n3. (Optional) Enable 'Quick Startup Mode' or 'Mobile App Standby'",
+                    color = AnthropicSand,
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.Serif,
+                    lineHeight = 15.sp
+                )
+            }
+
             // Port Field
             OutlinedTextField(
                 value = portText,
@@ -137,6 +164,45 @@ fun SettingsDialog(
                 colors = textFieldColors(),
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // Debug Console Log Toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(AnthropicSurfaceElevated)
+                    .border(1.dp, AnthropicBorder, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                    Text(
+                        text = "Debug Log Console",
+                        color = AnthropicParchment,
+                        fontSize = 12.5.sp,
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "Display live SOAP / WoL communication bar",
+                        color = AnthropicMuted,
+                        fontSize = 10.5.sp,
+                        fontFamily = FontFamily.Serif
+                    )
+                }
+                androidx.compose.material3.Switch(
+                    checked = showConsoleLog,
+                    onCheckedChange = { showConsoleLog = it },
+                    colors = androidx.compose.material3.SwitchDefaults.colors(
+                        checkedThumbColor = AnthropicParchment,
+                        checkedTrackColor = AnthropicTerracotta,
+                        uncheckedThumbColor = AnthropicSand,
+                        uncheckedTrackColor = AnthropicSurfaceDark,
+                        uncheckedBorderColor = AnthropicBorder
+                    )
+                )
+            }
 
             Spacer(modifier = Modifier.height(4.dp))
 
@@ -166,7 +232,8 @@ fun SettingsDialog(
                             ipAddress = ipAddress.trim(),
                             macAddress = macAddress.trim(),
                             port = parsedPort,
-                            deviceName = deviceName.trim()
+                            deviceName = deviceName.trim(),
+                            showConsoleLog = showConsoleLog
                         )
                         onSave(updated)
                     },

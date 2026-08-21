@@ -166,7 +166,8 @@ class RemoteViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isWolSending = true, statusMessage = "Broadcasting Wake-on-LAN...") }
             log("Broadcasting Wake-on-LAN magic packet to $mac (Port 9)...")
-            val result = WolHelper.sendWakeOnLan(mac)
+            val targetIp = _settingsState.value.ipAddress.trim()
+            val result = WolHelper.sendWakeOnLan(mac, targetIp = targetIp)
             result.onSuccess {
                 _uiState.update {
                     it.copy(
